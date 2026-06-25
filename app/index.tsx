@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
         <View className="w-full flex-col items-center gap-4 mt-8">
           
           <TouchableOpacity
-            onPress={() => router.push('/register')}
+            onPress={() => router.push('/registerselector')}
             className="w-full bg-[#4caf50] rounded-2xl py-4 flex-col items-center justify-center shadow-lg"
           >
             <Text className="text-base font-bold text-white">Crear cuenta</Text>

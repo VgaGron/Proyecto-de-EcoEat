@@ -38,7 +38,7 @@ export default function LoginScreen() {
         if (userData.rol === 'restaurante') {
           router.replace('/dashboard'); // Mandar al dueño a su panel (lo crearemos luego)
         } else {
-          router.replace('/main'); // Mandar al comensal a ver los restaurantes
+          router.replace('/menuUser'); // Mandar al comensal a ver los restaurantes
         }
         
       } else {
@@ -166,7 +166,7 @@ export default function LoginScreen() {
 
       <View className="mt-8 flex-row items-center z-10">
         <Text className="text-gray-500 text-xs font-medium">¿No tienes cuenta? </Text>
-        <TouchableOpacity onPress={() => router.push('/register')}>
+        <TouchableOpacity onPress={() => router.push('/registerselector')}>
           <Text className="text-[#90C659] text-xs font-black">Regístrate</Text>
         </TouchableOpacity>
       </View>
