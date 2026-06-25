@@ -1,11 +1,10 @@
-import { Stack, useRouter } from 'expo-router'; // Router moderno de Expo
+import { Stack, useRouter } from 'expo-router';
 import { addDoc, collection } from "firebase/firestore";
-import React from 'react';
-import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { db } from '../firebase';
 
 export default function WelcomeScreen() {
-  const router = useRouter(); 
+  const router = useRouter();
 
   const probarConexion = async () => {
     try {
@@ -21,29 +20,18 @@ export default function WelcomeScreen() {
         }
       });
       console.log("¡Conexión exitosa! ID del nuevo usuario: ", nuevoUsuario.id);
-      Alert.alert("¡Éxito!", "Tu código se conectó a Firebase. Revisa tu consola web.");
     } catch (error) {
       console.error("Error al conectar con Firebase: ", error);
-      Alert.alert("Error", "Hubo un problema. Revisa la terminal de Expo.");
     }
   };
 
   return (
-    <View className="flex-1 bg-white flex-col max-w-md mx-auto relative overflow-hidden">
+    <View className="flex-1 bg-white relative overflow-hidden">
       
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View className="absolute top-12 left-4 z-50">
-        <TouchableOpacity 
-          onPress={probarConexion} 
-          className="bg-[#90C659] py-2 px-4 rounded-xl shadow-lg border-2 border-white"
-        >
-          <Text className="text-white text-xs font-bold">🔥 Probar Firebase</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Imagen superior de comida */}
-      <View className="relative h-[45%] shrink-0 overflow-hidden">
+      {/* Imagen superior */}
+      <View className="h-[55%] overflow-hidden">
         <Image
           source={{ uri: "https://images.unsplash.com/photo-1562785561-d88a65a2679e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800" }}
           className="w-full h-full"
@@ -52,31 +40,33 @@ export default function WelcomeScreen() {
         <View className="absolute inset-0 bg-black/10" />
       </View>
 
-      {/* Contenido inferior */}
-      <View className="flex-1 flex-col items-center justify-between px-8 pt-2 pb-10">
+      {/* Tarjeta inferior redondeada */}
+      <View className="flex-1 bg-white rounded-t-3xl -mt-6 px-8 pt-8 pb-10 flex-col items-center justify-between">
 
-        {/* Logo */}
-        <View className="flex-col items-center -mt-10 z-10">
-          <View className="flex-row items-center gap-2 mb-6">
-            <View className="w-12 h-12 bg-[#90C659] rounded-full items-center justify-center shadow-md">
-              {/* Simple emoji fallback to avoid requiring react-native-svg */}
-              <Text style={{fontSize: 20, color: 'white'}}>🍽️</Text>
+        {/* Logo y textos */}
+        <View className="flex-col items-center w-full">
+          <View className="flex-row items-center gap-2 mb-4">
+            <View className="w-12 h-12 bg-[#4caf50] rounded-full items-center justify-center shadow-md">
+              <Text style={{ fontSize: 20, color: 'white' }}>🍽️</Text>
             </View>
             <Text className="text-3xl text-gray-800 font-bold tracking-tight">EcoEat</Text>
           </View>
 
-          {/* Headline */}
+          {/* Línea decorativa */}
+          <View className="w-12 h-1 bg-[#4caf50] rounded-full mb-4" />
+
           <Text className="text-center text-gray-900 mb-3 text-2xl font-bold leading-tight">
             Rescata comida deliciosa{"\n"}a precios increíbles.
           </Text>
 
-          <Text className="text-center text-gray-500 text-sm leading-relaxed max-w-[250px]">
-            Únete a la comunidad que lucha contra el desperdicio de alimentos.
+          <Text className="text-center text-gray-500 text-sm leading-relaxed">
+            Únete a la comunidad que lucha{"\n"}contra el desperdicio de alimentos.
           </Text>
         </View>
 
-        <View className="w-full flex-col items-center gap-4 mt-8">
-          
+        {/* Botones */}
+        <View className="w-full flex-col gap-3">
+
           <TouchableOpacity
             onPress={() => router.push('/registerselector')}
             className="w-full bg-[#4caf50] rounded-2xl py-4 flex-col items-center justify-center shadow-lg"
@@ -87,11 +77,11 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             onPress={() => router.push('/login')}
-            className="flex-row items-center"
+            className="w-full border-2 border-[#4caf50] rounded-2xl py-4 items-center"
           >
-            <Text className="text-sm text-gray-500">¿Ya tienes cuenta? </Text>
-            <Text className="text-sm text-[#4caf50] font-bold">Inicia sesión</Text>
+            <Text className="text-sm text-gray-500">¿Ya tienes cuenta? <Text className="text-[#4caf50] font-bold">Inicia sesión</Text></Text>
           </TouchableOpacity>
+
         </View>
 
       </View>
