@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Smartphone, CreditCard, Wallet, MapPin, CheckCircle2, ShieldCheck } from 'lucide-react-native';
-
-// COMPONENTES EXTERNOS
-import { DynamicLoader } from '../components/DynamicLoader'; // Ajusta la ruta a '../componentsB/...' si es necesario
+import { DynamicLoader } from '../components/DynamicLoader'; 
 import { ModalitySelector } from '../components/ModalitySelector'; 
+import { auth, db } from '../firebase';
+import { collection, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
 
 export default function CheckoutScreen() {
   const router = useRouter();
   
-  // Recibimos los datos del carrito desde la URL
-  const { cartStr, total } = useLocalSearchParams();
+  // Recibimos los datos incluyendo el restaurantId
+  const { cartStr, total, restaurantId } = useLocalSearchParams();
   
-  // Convertimos el String a un Objeto real, con un salvavidas por si falla
   const cartItems = typeof cartStr === 'string' ? JSON.parse(cartStr) : [];
   const initialTotal = typeof total === 'string' ? parseFloat(total) : 0;
 
@@ -25,6 +24,7 @@ export default function CheckoutScreen() {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   
   const [isProcessing, setIsProcessing] = useState(false);
+  const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null); // Guardará el ID del ticket
 
   const paymentSteps = [
     { text: "Conectando con tu método de pago...", icon: <CreditCard color="white" size={32} /> },
@@ -32,26 +32,72 @@ export default function CheckoutScreen() {
     { text: "¡Pago aprobado!", icon: <CheckCircle2 color="white" size={32} /> }
   ];
 
-  // MATEMÁTICAS DEL CARRITO
   const isEcoEligible = selectedModality === 'tienda' || selectedModality === 'comer';
   const ecoDiscount = (ownContainer && isEcoEligible) ? 0.50 : 0;
   const finalTotal = initialTotal - ecoDiscount;
 
-  // LÓGICA DE PAGO (SIMULACIÓN)
-  const handlePayment = () => {
-    setIsProcessing(true);
-  };
+  const handlePayment = async () => {
+    if (selectedModality !== 'delivery' && !selectedTime) {
+      Alert.alert("Aviso", "Por favor selecciona un horario de recojo o llegada.");
+      return;
+    }
+    if (selectedModality === 'delivery' && !deliveryAddress) {
+      Alert.alert("Aviso", "Por favor ingresa tu dirección de entrega.");
+      return;
+    }
 
-  const onPaymentComplete = () => {
-    // Al terminar el loader, navegamos a la pantalla de éxito (la haremos después)
-    router.replace({
-      pathname: '/success',
-      params: { 
-        modality: selectedModality, 
-        ecoDiscount: ecoDiscount, 
-        finalTotal: finalTotal 
+    setIsProcessing(true);
+
+    try {
+      const userId = auth.currentUser?.uid || "usuario_anonimo"; 
+      
+      const nuevoPedido = {
+        clienteId: userId,
+        restauranteId: restaurantId,
+        items: cartItems,
+        totalPagado: finalTotal,
+        metodoPago: selectedPayment,
+        modalidad: selectedModality,
+        horario: selectedTime || "Lo antes posible",
+        direccionDelivery: deliveryAddress || null,
+        llevoEnvase: ownContainer,
+        estado: "pagado_pendiente",
+        fechaPedido: new Date().toISOString()
+      };
+
+      // 1. Guardamos el pedido
+      const docRef = await addDoc(collection(db, 'pedidos'), nuevoPedido);
+      setGeneratedOrderId(docRef.id); 
+
+      // 2. ¡NUEVO! Descontamos el stock de la base de datos mágicamente
+      for (const item of cartItems) {
+        if (item.collection && item.id) {
+          const itemRef = doc(db, item.collection, item.id);
+          // Le decimos a Firebase: "A la cantidadDisponible actual, réstale la cantidad comprada"
+          await updateDoc(itemRef, {
+            cantidadDisponible: increment(-item.quantity)
+          });
+        }
       }
-    });
+
+    } catch (error) {
+      console.error("Error al procesar:", error);
+      Alert.alert("Error", "Hubo un problema procesando tu pago.");
+      setIsProcessing(false);
+    }
+};
+  const onPaymentComplete = () => {
+    // Cuando el loader animado termine, viajamos al éxito PASÁNDOLE el ID del pedido
+    if (generatedOrderId) {
+      router.replace({
+        pathname: '/success',
+        params: { 
+          orderId: generatedOrderId, 
+          modality: selectedModality, 
+          finalTotal: finalTotal 
+        }
+      });
+    }
   };
 
   if (isProcessing) {
@@ -79,7 +125,6 @@ export default function CheckoutScreen() {
           </View>
           
           <View className="flex-row gap-2">
-            {/* Opción Tienda */}
             <TouchableOpacity
               onPress={() => { setSelectedModality('tienda'); setOwnContainer(false); }}
               className={`flex-1 py-3 rounded-xl items-center justify-center border transition-all ${
@@ -90,7 +135,6 @@ export default function CheckoutScreen() {
               <Text className={`font-bold text-xs ${selectedModality === 'tienda' ? 'text-white' : 'text-gray-600'}`}>Tienda</Text>
             </TouchableOpacity>
 
-            {/* Opción Delivery */}
             <TouchableOpacity
               onPress={() => { setSelectedModality('delivery'); setOwnContainer(false); }}
               className={`flex-1 py-3 rounded-xl items-center justify-center border transition-all ${
@@ -101,7 +145,6 @@ export default function CheckoutScreen() {
               <Text className={`font-bold text-xs ${selectedModality === 'delivery' ? 'text-white' : 'text-gray-600'}`}>Delivery</Text>
             </TouchableOpacity>
 
-            {/* Opción Comer Allí */}
             <TouchableOpacity
               onPress={() => { setSelectedModality('comer'); setOwnContainer(false); }}
               className={`flex-1 py-3 rounded-xl items-center justify-center border transition-all ${
@@ -253,7 +296,7 @@ export default function CheckoutScreen() {
           }`}
         >
           <Text className={`font-bold text-lg ${selectedPayment ? 'text-white' : 'text-gray-400'}`}>
-            ✅ Confirmar Pago
+            Confirmar Pago
           </Text>
         </TouchableOpacity>
       </View>

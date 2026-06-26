@@ -23,10 +23,37 @@ export default function RestaurantMenuScreen() {
   const [restaurantName, setRestaurantName] = useState("Cargando...");
   const [loading, setLoading] = useState(true);
 
-  const formatData = (doc: any) => {
+  const allItems = [...packs, ...platos];
+  const totalItems = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+  const totalAmount = allItems.reduce(
+    (sum, item) => sum + (quantities[item.id] || 0) * (item.discountPrice || 0),
+    0
+  );
+
+  const handleQuantityChange = (itemId: string, delta: number, stock: number, itemName: string) => {
+    setQuantities((prev) => {
+      const current = prev[itemId] || 0;
+      const next = Math.max(0, Math.min(stock, current + delta));
+
+      if (next === 0) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return { ...prev, [itemId]: next };
+    });
+
+    if (delta > 0) {
+      setToastMessage(`${itemName} agregado al carrito`);
+      setTimeout(() => setToastMessage(null), 1500);
+    }
+  };
+
+  const formatData = (doc: any, collectionName: string) => {
     const data = doc.data();
     return {
       id: doc.id,
+      collection: collectionName, 
       name: data.nombre || data.name || "Producto sin nombre",
       description: data.descripcion || data.description || "Delicioso excedente del día.",
       originalPrice: Number(data.precioOriginal || data.originalPrice || 0),
@@ -38,6 +65,7 @@ export default function RestaurantMenuScreen() {
     };
   };
 
+  // 2. Le pasamos el nombre de la colección al formatear
   const fetchMenuData = async () => {
     try {
       setLoading(true);
@@ -57,9 +85,9 @@ export default function RestaurantMenuScreen() {
         getDocs(qPacks),
         getDocs(qPlatos)
       ]);
-      
-      setPacks(packsSnapshot.docs.map(formatData));
-      setPlatos(platosSnapshot.docs.map(formatData));
+            
+      setPacks(packsSnapshot.docs.map(doc => formatData(doc, "packs_sopresa")));
+      setPlatos(platosSnapshot.docs.map(doc => formatData(doc, "platos_independientes")));
 
     } catch (error) {
       console.error("Error al cargar menú de Firestore:", error);
@@ -72,30 +100,6 @@ export default function RestaurantMenuScreen() {
     fetchMenuData();
   }, [id]);
 
-  // --- LÓGICA DEL CARRITO (Funciona para ambos porque los IDs de Firebase son únicos) ---
-  const handleQuantityChange = (dishId: string, delta: number, stock: number, name: string) => {
-    setQuantities((prev) => {
-      const currentQty = prev[dishId] || 0;
-      const newQty = currentQty + delta;
-      
-      if (newQty < 0 || newQty > stock) return prev;
-      
-      if (delta > 0) {
-        setToastMessage(`¡${name} añadido!`);
-        setTimeout(() => setToastMessage(null), 2000);
-      }
-      return { ...prev, [dishId]: newQty };
-    });
-  };
-
-  // Unimos todo para calcular el total
-  const allItems = [...packs, ...platos];
-  const totalItems = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-  
-  const totalAmount = allItems.reduce((sum, item) => {
-    return sum + (quantities[item.id] || 0) * item.discountPrice;
-  }, 0);
-
   const handleProceedCheckout = () => {
     const cartItems = allItems
       .map((item) => ({
@@ -103,6 +107,7 @@ export default function RestaurantMenuScreen() {
         name: item.name,
         quantity: quantities[item.id] || 0,
         price: item.discountPrice,
+        collection: item.collection // <--- NUEVO: Lo metemos a la mochila
       }))
       .filter((item) => item.quantity > 0);
 
@@ -110,7 +115,8 @@ export default function RestaurantMenuScreen() {
       pathname: '/checkout', 
       params: { 
         cartStr: JSON.stringify(cartItems), 
-        total: totalAmount 
+        total: totalAmount,
+        restaurantId: id
       }
     });
   };
