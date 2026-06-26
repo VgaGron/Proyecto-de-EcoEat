@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Leaf, Minus, Plus, ShoppingCart, Tag } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { ActionButton } from "../components/ActionButton";
 import { auth, db } from "../firebase";
@@ -148,7 +148,7 @@ export default function RestaurantMenuScreen() {
     const isDangerous = item.alergenos && item.alergenos.some((a: string) => userAllergies.includes(a));
 
     return (
-      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row min-h-[150px] mb-4 py-1 ${isAgotado ? 'opacity-60' : ''}`}>
+      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row h-36 mb-4 ${isAgotado ? 'opacity-60' : ''}`}>
         
         {/* Imagen */}
         <View className="w-1/3 bg-gray-100 relative">
