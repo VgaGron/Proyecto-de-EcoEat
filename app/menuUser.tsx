@@ -16,7 +16,6 @@ export default function MainMenuScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // --- TRAER DATOS DE FIREBASE ---
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
