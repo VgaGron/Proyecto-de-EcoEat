@@ -40,10 +40,8 @@ export default function WelcomeScreen() {
         <View className="absolute inset-0 bg-black/10" />
       </View>
 
-      {/* Tarjeta inferior redondeada */}
       <View className="flex-1 bg-white rounded-t-3xl -mt-6 px-8 pt-8 pb-10 flex-col items-center justify-between">
 
-        {/* Logo y textos */}
         <View className="flex-col items-center w-full">
           <View className="flex-row items-center gap-2 mb-4">
             <View className="w-12 h-12 bg-[#4caf50] rounded-full items-center justify-center shadow-md">
@@ -52,7 +50,6 @@ export default function WelcomeScreen() {
             <Text className="text-3xl text-gray-800 font-bold tracking-tight">EcoEat</Text>
           </View>
 
-          {/* Línea decorativa */}
           <View className="w-12 h-1 bg-[#4caf50] rounded-full mb-4" />
 
           <Text className="text-center text-gray-900 mb-3 text-2xl font-bold leading-tight">
@@ -64,7 +61,6 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        {/* Botones */}
         <View className="w-full flex-col gap-3">
 
           <TouchableOpacity

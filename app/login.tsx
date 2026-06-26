@@ -36,9 +36,9 @@ export default function LoginScreen() {
         const userData = profileSnap.data();
         
         if (userData.rol === 'restaurante') {
-          router.replace('/dashboard'); // Mandar al dueño a su panel (lo crearemos luego)
+          router.replace('/menuUser'); 
         } else {
-          router.replace('/menuUser'); // Mandar al comensal a ver los restaurantes
+          router.replace('/menuUser');
         }
         
       } else {
@@ -70,7 +70,6 @@ export default function LoginScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col items-center justify-center p-6 relative">
 
-      {/* Decoraciones de fondo */}
       <View className="absolute -top-10 -right-10 opacity-5 pointer-events-none">
         <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/2913/2913520.png" }} className="w-64 h-64" style={{ transform: [{ rotate: '45deg' }] }} />
       </View>
@@ -78,7 +77,6 @@ export default function LoginScreen() {
         <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/2913/2913520.png" }} className="w-64 h-64" style={{ transform: [{ rotate: '-12deg' }] }} />
       </View>
 
-      {/* Logo Central */}
       <View className="flex-col items-center z-10 mb-8 mt-10">
         <View className="flex-row items-center gap-3">
           <View className="bg-[#90C659] p-3.5 rounded-2xl shadow-xl">
@@ -93,7 +91,6 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      {/* Tarjeta del Formulario */}
       <View className="w-full max-w-sm bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 z-10">
         <Text className="text-center font-bold text-gray-500 text-sm tracking-widest mb-8 uppercase">
           Bienvenido de nuevo
@@ -106,7 +103,6 @@ export default function LoginScreen() {
           </View>
         ) : null}
 
-        {/* Input Correo (Formato adaptado a React Native) */}
         <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
           <User color="#90C659" size={20} />
           <TextInput
@@ -119,7 +115,6 @@ export default function LoginScreen() {
           />
         </View>
 
-        {/* Input Contraseña */}
         <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-6">
           <Lock color="#90C659" size={20} />
           <TextInput
@@ -127,11 +122,10 @@ export default function LoginScreen() {
             placeholder="Contraseña"
             value={password}
             onChangeText={(text) => { setPassword(text); setError(''); }}
-            secureTextEntry={true} // ESTO OCULTA LOS CARACTERES COMO BOLITAS
+            secureTextEntry={true} 
           />
         </View>
 
-        {/* Botón Ingresar */}
         <TouchableOpacity
           onPress={handleLogin}
           disabled={isLoading}

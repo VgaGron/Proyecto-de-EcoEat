@@ -4,9 +4,9 @@ import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, GeoPoint, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { AlertTriangle, ArrowLeft, Check, CreditCard, FileCheck2, FileText, Lock, Mail, MapPin, Store, Upload, User } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Camera, Check, CreditCard, FileCheck2, FileText, Lock, Mail, MapPin, Store, Upload, User } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db, storage } from '../firebase';
 
 export default function RestaurantRegisterScreen() {
@@ -19,6 +19,7 @@ export default function RestaurantRegisterScreen() {
 
   const categories = ['Panadería', 'Menú', 'Comida Rápida', 'Postres', 'Cafetería'];
   const [coordenadas, setCoordenadas] = useState<GeoPoint | null>(null);
+  const [profileImage, setProfileImage] = useState<DocumentPicker.DocumentPickerAsset | null>(null); // NUEVA FOTO DE PERFIL
   const [licenciaFile, setLicenciaFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [sanidadFile, setSanidadFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   
@@ -52,20 +53,19 @@ export default function RestaurantRegisterScreen() {
     }
   };
 
-  const pickDocument = async (setFile: (file: DocumentPicker.DocumentPickerAsset) => void, docName: string) => {
+  const pickDocument = async (setFile: (file: DocumentPicker.DocumentPickerAsset) => void, type: 'image/*' | ['image/*', 'application/pdf'] = ['image/*', 'application/pdf']) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf'],
+        type: type,
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setFile(result.assets[0]);
-        Alert.alert("¡Documento Listo!", `${docName} adjuntado correctamente.`);
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Error al seleccionar el documento.");
+      setErrorMsg("Error al seleccionar el archivo.");
     }
   };
 
@@ -95,6 +95,12 @@ export default function RestaurantRegisterScreen() {
 
       let licenciaUrl = "";
       let sanidadUrl = "";
+      let finalImageUrl = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80";
+
+      if (profileImage) {
+        setLoadingText('Subiendo Logo del Local...');
+        finalImageUrl = await uploadToFirebase(profileImage.uri, `restaurantes_logos/${uid}_perfil`);
+      }
 
       if (licenciaFile) {
         setLoadingText('Subiendo Licencia...');
@@ -102,7 +108,7 @@ export default function RestaurantRegisterScreen() {
       }
 
       if (sanidadFile) {
-        setLoadingText('Subiendo Carnet de Sanidad...');
+        setLoadingText('Subiendo Carnet...');
         sanidadUrl = await uploadToFirebase(sanidadFile.uri, `documentos_legales/${uid}_sanidad`);
       }
 
@@ -125,7 +131,7 @@ export default function RestaurantRegisterScreen() {
         activo: true, 
         ratingPromedio: 5.0,
         distanciaTexto: "A menos de 2 km", 
-        imagenUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80",
+        imagenUrl: finalImageUrl,
         urgente: false,
         ubicacion: {
           coordenadas: coordenadas,
@@ -138,11 +144,10 @@ export default function RestaurantRegisterScreen() {
         }
       });
 
-      // ¡Terminó exitosamente!
-      setStep(5); // Pantalla de éxito
+      setStep(5); 
 
       setTimeout(() => {
-        router.replace('/dashboardRestaurant'); // Mandamos al dueño a su panel
+        router.replace('/dashboardRestaurant'); 
       }, 2500);
 
     } catch (error: any) {
@@ -152,13 +157,13 @@ export default function RestaurantRegisterScreen() {
       } else {
         setErrorMsg('Ocurrió un error. Revisa tu conexión y los datos.');
       }
+      setStep(1); 
     } finally {
       setIsLoading(false);
       setLoadingText('Guardando...');
     }
   };
 
-  // --- PANTALLA DE CARGA / ÉXITO FINAL ---
   if (step === 5) {
     return (
       <View className="flex-1 bg-green-50 items-center justify-center p-6">
@@ -173,7 +178,6 @@ export default function RestaurantRegisterScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
       
-      {/* Botón Flotante Atrás */}
       <TouchableOpacity 
         onPress={() => step > 1 ? setStep(step - 1) : router.back()}
         disabled={isLoading}
@@ -182,7 +186,6 @@ export default function RestaurantRegisterScreen() {
         <ArrowLeft color="#6b7280" size={24} />
       </TouchableOpacity>
 
-      {/* Indicador de Pasos (Progreso) */}
       <View className="absolute top-14 w-full flex-row justify-center gap-2 z-10 pointer-events-none">
         {[1, 2, 3, 4].map(i => (
           <View key={i} className={`h-2 rounded-full transition-all ${i <= step ? 'w-8 bg-[#90C659]' : 'w-2 bg-gray-300'}`} />
@@ -194,7 +197,6 @@ export default function RestaurantRegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         
-        {/* Tarjeta Principal */}
         <View className="w-full max-w-sm bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 z-10">
           
           {errorMsg ? (
@@ -204,13 +206,34 @@ export default function RestaurantRegisterScreen() {
             </View>
           ) : null}
 
-          {/* PASO 1 */}
           {step === 1 && (
             <View>
-              <View className="items-center mb-6">
+              <View className="items-center mb-4">
                 <Text className="font-bold text-gray-400 text-xs tracking-widest mb-1 uppercase">Paso 1 de 4</Text>
-                <Text className="font-black text-2xl text-gray-900">Creación de Cuenta</Text>
+                <Text className="font-black text-2xl text-gray-900">Perfil del Local</Text>
               </View>
+
+              <View className="items-center mb-6">
+                <TouchableOpacity 
+                  onPress={() => pickDocument(setProfileImage, 'image/*')}
+                  className="w-24 h-24 bg-gray-50 rounded-full border-2 border-dashed border-gray-300 items-center justify-center overflow-hidden relative"
+                >
+                  {profileImage ? (
+                    <>
+                      <Image source={{ uri: profileImage.uri }} className="w-full h-full" resizeMode="cover" />
+                      <View className="absolute bottom-0 w-full bg-black/40 py-1 items-center">
+                        <Text className="text-[8px] text-white font-bold uppercase">Editar</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <View className="items-center justify-center mt-2">
+                      <Camera color="#9ca3af" size={28} />
+                      <Text className="text-[10px] text-gray-400 font-bold mt-1">Logo / Foto</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+
               <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
                 <Mail color="#90C659" size={20} />
                 <TextInput placeholder="Correo corporativo o personal" value={formData.email} onChangeText={t => setFormData({...formData, email: t})} keyboardType="email-address" autoCapitalize="none" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
@@ -226,7 +249,6 @@ export default function RestaurantRegisterScreen() {
             </View>
           )}
 
-          {/* PASO 2 */}
           {step === 2 && (
             <View>
               <View className="items-center mb-6">
@@ -250,7 +272,6 @@ export default function RestaurantRegisterScreen() {
             </View>
           )}
 
-          {/* PASO 3 */}
           {step === 3 && (
             <View>
               <View className="items-center mb-6">
@@ -282,13 +303,13 @@ export default function RestaurantRegisterScreen() {
                 ))}
               </View>
 
-              <Text className="font-bold text-xs text-gray-700 mb-2">Documentos</Text>
+              <Text className="font-bold text-xs text-gray-700 mb-2">Documentos Legales</Text>
               <View className="flex-row gap-3 mb-6">
-                <TouchableOpacity onPress={() => pickDocument(setLicenciaFile, 'Licencia')} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${licenciaFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+                <TouchableOpacity onPress={() => pickDocument(setLicenciaFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${licenciaFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                   {licenciaFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
                   <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{licenciaFile ? 'Licencia Lista' : 'Subir Licencia'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => pickDocument(setSanidadFile, 'Carnet de Sanidad')} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${sanidadFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+                <TouchableOpacity onPress={() => pickDocument(setSanidadFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${sanidadFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                   {sanidadFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
                   <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{sanidadFile ? 'Carnet Listo' : 'Subir Carnet'}</Text>
                 </TouchableOpacity>
@@ -296,7 +317,6 @@ export default function RestaurantRegisterScreen() {
             </View>
           )}
 
-          {/* PASO 4 */}
           {step === 4 && (
             <View>
               <View className="items-center mb-6">
@@ -318,7 +338,6 @@ export default function RestaurantRegisterScreen() {
             </View>
           )}
 
-          {/* BOTÓN PRINCIPAL */}
           <TouchableOpacity 
             onPress={() => {
               if (step < 4) setStep(step + 1);

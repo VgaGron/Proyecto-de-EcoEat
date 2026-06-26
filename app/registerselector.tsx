@@ -10,7 +10,7 @@ export default function RegisterRoleSelector() {
     <View className="flex-1 bg-gray-50 flex-col items-center justify-center p-6 relative overflow-hidden">
       
       <TouchableOpacity 
-        onPress={() => router.back()} // Vuelve a la pantalla anterior mágicamente
+        onPress={() => router.back()} 
         className="absolute top-12 left-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm z-10"
       >
         <ArrowLeft color="#6b7280" size={24} />
@@ -23,11 +23,10 @@ export default function RegisterRoleSelector() {
         </Text>
       </View>
 
-      {/* Botones de Selección */}
       <View className="w-full max-w-sm z-10">
         
         <TouchableOpacity 
-          onPress={() => router.push('/register-user')} // Nos llevará al formulario del comensal
+          onPress={() => router.push('/register-user')} 
           className="w-full bg-white p-6 rounded-[32px] shadow-sm border-2 border-transparent flex-row items-center gap-5 relative overflow-hidden mb-4"
         >
           <View className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center shrink-0">
@@ -40,7 +39,7 @@ export default function RegisterRoleSelector() {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          onPress={() => router.push('/register-restaurant')} // Nos llevará al formulario del dueño
+          onPress={() => router.push('/register-restaurant')} 
           className="w-full bg-white p-6 rounded-[32px] shadow-sm border-2 border-transparent flex-row items-center gap-5 relative overflow-hidden"
         >
           <View className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0">

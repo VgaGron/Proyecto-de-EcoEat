@@ -34,7 +34,6 @@ export default function RegisterUserScreen() {
     }
   };
 
-  // --- CONEXIÓN CON FIREBASE ---
   const handleFirebaseRegister = async () => {
     if (!name || !email || !password) {
       setErrorMsg("Por favor, llena tu nombre, correo y contraseña.");
@@ -46,11 +45,9 @@ export default function RegisterUserScreen() {
       setIsLoading(true);
       setErrorMsg('');
 
-      // 1. Crear cuenta segura
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      // 2. Guardar perfil en Firestore
       await setDoc(doc(db, 'usuarios', user.uid), {
         nombre_completo: name,
         email: email.trim(),
@@ -63,10 +60,9 @@ export default function RegisterUserScreen() {
         rol: 'comensal'
       });
 
-      // 3. Mostrar pantalla de carga nativa y navegar
       setStep(3);
       setTimeout(() => {
-        router.replace('/menuUser'); // Mandar a la pantalla principal después de 2.5 segs
+        router.replace('/menuUser'); 
       }, 2500);
 
     } catch (error: any) {
@@ -79,11 +75,10 @@ export default function RegisterUserScreen() {
         setErrorMsg('Hubo un error al crear tu cuenta. Intenta de nuevo.');
       }
       setIsLoading(false);
-      setStep(1); // Regresamos al paso 1 por si falló la contraseña
+      setStep(1); 
     }
   };
 
-  // --- PANTALLA DE CARGA FINAL NATIVA (PASO 3) ---
   if (step === 3) {
     return (
       <View className="flex-1 bg-green-50 items-center justify-center p-6">
@@ -97,7 +92,6 @@ export default function RegisterUserScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
       
-      {/* Botón Flotante Atrás */}
       <TouchableOpacity 
         onPress={() => router.back()}
         className="absolute top-12 left-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm z-20"
@@ -105,7 +99,6 @@ export default function RegisterUserScreen() {
         <ArrowLeft color="#6b7280" size={24} />
       </TouchableOpacity>
 
-      {/* Indicador de Pasos (Progreso) */}
       <View className="absolute top-14 w-full flex-row justify-center gap-2 z-10 pointer-events-none">
         <View className={`h-2 rounded-full ${step === 1 ? 'w-12 bg-[#90C659]' : 'w-2 bg-gray-300'}`} />
         <View className={`h-2 rounded-full ${step === 2 ? 'w-12 bg-[#90C659]' : 'w-2 bg-gray-300'}`} />
@@ -116,7 +109,6 @@ export default function RegisterUserScreen() {
         showsVerticalScrollIndicator={false}
       >
         
-        {/* Logo Superior */}
         <View className="flex-col items-center z-10 mb-8">
           <View className="flex-row items-center gap-3">
             <View className="bg-[#90C659] p-3.5 rounded-2xl shadow-xl">
@@ -131,7 +123,6 @@ export default function RegisterUserScreen() {
           </View>
         </View>
 
-        {/* Tarjeta Principal */}
         <View className="w-full max-w-sm bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 z-10">
           
           {errorMsg ? (
@@ -140,7 +131,6 @@ export default function RegisterUserScreen() {
             </View>
           ) : null}
 
-          {/* PASO 1: Datos Básicos */}
           {step === 1 && (
             <View>
               <View className="items-center mb-6">
@@ -205,7 +195,6 @@ export default function RegisterUserScreen() {
             </View>
           )}
 
-          {/* PASO 2: Preferencias Alimenticias */}
           {step === 2 && (
             <View>
               <View className="items-center mb-6">
@@ -214,7 +203,6 @@ export default function RegisterUserScreen() {
                 <Text className="text-gray-500 text-xs mt-1">Personaliza tu experiencia de rescate</Text>
               </View>
 
-              {/* Gustos */}
               <View className="bg-green-50 p-4 rounded-2xl mb-4 border border-green-100">
                 <View className="flex-row items-center gap-2 mb-3">
                   <View className="bg-[#90C659] p-1.5 rounded-lg"><Leaf color="white" size={14} /></View>
@@ -238,7 +226,6 @@ export default function RegisterUserScreen() {
                 </View>
               </View>
 
-              {/* Alergias */}
               <View className="bg-orange-50 p-4 rounded-2xl mb-6 border border-orange-100">
                 <View className="flex-row items-center gap-2 mb-3">
                   <View className="bg-orange-500 p-1.5 rounded-lg"><AlertCircle color="white" size={14} /></View>
@@ -262,7 +249,6 @@ export default function RegisterUserScreen() {
                 </View>
               </View>
 
-              {/* Botón Finalizar */}
               <TouchableOpacity 
                 onPress={handleFirebaseRegister}
                 disabled={isLoading}
