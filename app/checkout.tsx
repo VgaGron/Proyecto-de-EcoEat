@@ -87,7 +87,6 @@ export default function CheckoutScreen() {
     }
 };
   const onPaymentComplete = () => {
-    // Cuando el loader animado termine, viajamos al éxito PASÁNDOLE el ID del pedido
     if (generatedOrderId) {
       router.replace({
         pathname: '/success',

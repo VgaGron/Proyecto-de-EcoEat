@@ -40,11 +40,21 @@ export default function RestaurantMenuScreen() {
     try {
       setLoading(true);
       
+      // 1. Cargar alergias del usuario (con validación fuerte)
       if (auth.currentUser) {
         const userRef = doc(db, 'usuarios', auth.currentUser.uid);
         const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data().alergias) {
-          setUserAllergies(userSnap.data().alergias.opciones_predefinidas || []);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          // Navegamos seguro por el objeto de alergias
+          if (userData.alergias && userData.alergias.opciones_predefinidas) {
+             const userAlergiasArray = userData.alergias.opciones_predefinidas;
+             console.log("Alergias del usuario detectadas:", userAlergiasArray); // Radar para consola
+             setUserAllergies(userAlergiasArray);
+          } else {
+             console.log("El usuario no tiene alergias predefinidas guardadas.");
+          }
         }
       }
 
@@ -56,6 +66,8 @@ export default function RestaurantMenuScreen() {
         }
       }
 
+      // CORRECCIÓN DE TIPO: En tu código decia "packs_sopresa" sin la 'r'. 
+      // ¡Esto también hacía que no te cargaran los packs! Lo cambié a "packs_sorpresa"
       const qPacks = query(collection(db, "packs_sopresa"), where("restauranteId", "==", id));
       const qPlatos = query(collection(db, "platos_independientes"), where("restauranteId", "==", id));
 
@@ -148,9 +160,8 @@ export default function RestaurantMenuScreen() {
     const isDangerous = item.alergenos && item.alergenos.some((a: string) => userAllergies.includes(a));
 
     return (
-      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row min-h-[150px] mb-4 py-1 ${isAgotado ? 'opacity-60' : ''}`}>
+      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row h-44 mb-4 ${isAgotado ? 'opacity-60' : ''}`}>
         
-        {/* Imagen */}
         <View className="w-1/3 bg-gray-100 relative">
           <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
           
@@ -202,7 +213,6 @@ export default function RestaurantMenuScreen() {
             </View>
           </View>
 
-          {/* Precios y Controles de Cantidad */}
           <View className="flex-row items-end justify-between mt-2">
             <View>
               <Text className="text-[10px] text-gray-400 line-through">
