@@ -2,8 +2,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Leaf, Minus, Plus, ShoppingCart, Tag } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { ActionButton } from "../components/ActionButton";
+import { AlertComponent } from "../components/AlertComponent"; // <-- NUESTRO NUEVO MODAL
 import { auth, db } from "../firebase";
 
 export default function RestaurantMenuScreen() {
@@ -19,20 +20,32 @@ export default function RestaurantMenuScreen() {
   const [loading, setLoading] = useState(true);
   const [userAllergies, setUserAllergies] = useState<string[]>([]);
 
-  const formatData = (doc: any, collectionName: string) => {
-    const data = doc.data();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [conflictAllergies, setConflictAllergies] = useState<string[]>([]);
+  const [pendingItemToAdd, setPendingItemToAdd] = useState<any>(null);
+
+  const formatData = (docSnap: any, collectionName: string) => {
+    const data = docSnap.data();
+    
+    let alergenosSeguros: string[] = [];
+    if (Array.isArray(data.alergenos)) {
+      alergenosSeguros = data.alergenos;
+    } else if (typeof data.alergenos === 'string' && data.alergenos.trim() !== "") {
+      alergenosSeguros = [data.alergenos];
+    }
+
     return {
-      id: doc.id,
+      id: docSnap.id,
       collection: collectionName,
-      name: data.nombre || data.name || "Producto sin nombre",
-      description: data.descripcion || data.description || "Delicioso excedente del día.",
-      originalPrice: Number(data.precioOriginal || data.originalPrice || 0),
-      discountPrice: Number(data.precioOferta || data.discountPrice || 0),
-      category: data.categoria || data.category || "Variado",
-      timeLeft: data.tiempoRestante || data.timeLeft || "Pronto",
-      stock: Number(data.cantidadDisponible || data.stock || 1),
-      image: data.imagenUrl || data.image || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400",
-      alergenos: data.alergenos || [] 
+      name: data.nombre ?? data.name ?? "Producto sin nombre",
+      description: data.descripcion ?? data.description ?? "Delicioso excedente del día.",
+      originalPrice: Number(data.precioOriginal ?? data.originalPrice ?? 0),
+      discountPrice: Number(data.precioOferta ?? data.discountPrice ?? 0),
+      category: data.categoria ?? data.category ?? "Variado",
+      timeLeft: data.tiempoRestante ?? data.timeLeft ?? "Pronto",
+      stock: Number(data.cantidadDisponible ?? data.stock ?? 1),
+      image: data.imagenUrl ?? data.image ?? "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400",
+      alergenos: alergenosSeguros 
     };
   };
 
@@ -40,20 +53,13 @@ export default function RestaurantMenuScreen() {
     try {
       setLoading(true);
       
-      // 1. Cargar alergias del usuario (con validación fuerte)
       if (auth.currentUser) {
         const userRef = doc(db, 'usuarios', auth.currentUser.uid);
         const userSnap = await getDoc(userRef);
-        
         if (userSnap.exists()) {
           const userData = userSnap.data();
-          // Navegamos seguro por el objeto de alergias
           if (userData.alergias && userData.alergias.opciones_predefinidas) {
-             const userAlergiasArray = userData.alergias.opciones_predefinidas;
-             console.log("Alergias del usuario detectadas:", userAlergiasArray); // Radar para consola
-             setUserAllergies(userAlergiasArray);
-          } else {
-             console.log("El usuario no tiene alergias predefinidas guardadas.");
+             setUserAllergies(userData.alergias.opciones_predefinidas);
           }
         }
       }
@@ -66,8 +72,6 @@ export default function RestaurantMenuScreen() {
         }
       }
 
-      // CORRECCIÓN DE TIPO: En tu código decia "packs_sopresa" sin la 'r'. 
-      // ¡Esto también hacía que no te cargaran los packs! Lo cambié a "packs_sorpresa"
       const qPacks = query(collection(db, "packs_sopresa"), where("restauranteId", "==", id));
       const qPlatos = query(collection(db, "platos_independientes"), where("restauranteId", "==", id));
 
@@ -111,20 +115,33 @@ export default function RestaurantMenuScreen() {
       return;
     }
 
-    const commonAllergies = item.alergenos.filter((a: string) => userAllergies.includes(a));
+    const alergenosPlatoSeguro = Array.isArray(item.alergenos) ? item.alergenos : [];
+    const userAllergiesLower = userAllergies.map(a => a.toLowerCase().trim());
+    const platoAllergenosLower = alergenosPlatoSeguro.map((a: string) => a.toLowerCase().trim());
+    const commonAllergiesLower = platoAllergenosLower.filter((a: string) => userAllergiesLower.includes(a));
 
-    if (commonAllergies.length > 0) {
-      Alert.alert(
-        "⚠️ Alerta de Salud",
-        `Tu perfil indica que tienes alergia a: ${commonAllergies.join(', ')}. Este producto contiene dicho ingrediente.\n\n¿Estás seguro de que deseas añadirlo al carrito?`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Sí, añadir bajo mi riesgo", onPress: () => applyQuantityChange(item.id, delta, item.stock, item.name) }
-        ]
-      );
+    if (commonAllergiesLower.length > 0) {
+      const originalNames = alergenosPlatoSeguro.filter((a: string) => userAllergiesLower.includes(a.toLowerCase().trim()));
+      
+      setConflictAllergies(originalNames);
+      setPendingItemToAdd(item);
+      setModalVisible(true);
     } else {
       applyQuantityChange(item.id, delta, item.stock, item.name);
     }
+  };
+
+  const confirmRiskyAdd = () => {
+    if (pendingItemToAdd) {
+      applyQuantityChange(pendingItemToAdd.id, 1, pendingItemToAdd.stock, pendingItemToAdd.name);
+    }
+    setModalVisible(false);
+    setPendingItemToAdd(null);
+  };
+
+  const cancelRiskyAdd = () => {
+    setModalVisible(false);
+    setPendingItemToAdd(null);
   };
 
   const allItems = [...packs, ...platos];
@@ -157,10 +174,13 @@ export default function RestaurantMenuScreen() {
 
   const renderItemCard = (item: any, isSurprisePack: boolean) => {
     const isAgotado = item.stock <= 0;
-    const isDangerous = item.alergenos && item.alergenos.some((a: string) => userAllergies.includes(a));
+    
+    const userAllergiesLower = userAllergies.map(a => a.toLowerCase().trim());
+    const platoAllergenosLower = (item.alergenos || []).map((a: string) => a.toLowerCase().trim());
+    const isDangerous = platoAllergenosLower.some((a: string) => userAllergiesLower.includes(a));
 
     return (
-      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row h-44 mb-4 ${isAgotado ? 'opacity-60' : ''}`}>
+      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row h-36 mb-4 ${isAgotado ? 'opacity-60' : ''}`}>
         
         <View className="w-1/3 bg-gray-100 relative">
           <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
@@ -285,6 +305,13 @@ export default function RestaurantMenuScreen() {
           <Text className="text-sm font-medium text-white">{toastMessage}</Text>
         </View>
       )}
+
+      <AlertComponent 
+        visible={modalVisible} 
+        allergens={conflictAllergies} 
+        onClose={cancelRiskyAdd} 
+        onConfirm={confirmRiskyAdd} 
+      />
       
       {loading ? (
         <View className="flex-1 items-center justify-center">
@@ -323,6 +350,7 @@ export default function RestaurantMenuScreen() {
         </ScrollView>
       )}
 
+      {/* FOOTER FLOTANTE */}
       <View className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-white shadow-lg pb-8">
         <TouchableOpacity
           onPress={handleProceedCheckout}

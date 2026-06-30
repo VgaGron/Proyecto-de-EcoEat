@@ -65,15 +65,12 @@ export default function CheckoutScreen() {
         fechaPedido: new Date().toISOString()
       };
 
-      // 1. Guardamos el pedido
       const docRef = await addDoc(collection(db, 'pedidos'), nuevoPedido);
       setGeneratedOrderId(docRef.id); 
 
-      // 2. ¡NUEVO! Descontamos el stock de la base de datos mágicamente
       for (const item of cartItems) {
         if (item.collection && item.id) {
           const itemRef = doc(db, item.collection, item.id);
-          // Le decimos a Firebase: "A la cantidadDisponible actual, réstale la cantidad comprada"
           await updateDoc(itemRef, {
             cantidadDisponible: increment(-item.quantity)
           });
