@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { UrgentOffers } from '../components/UrgentOffers';
 import { db } from '../firebase';
 
@@ -187,8 +187,8 @@ export default function MainMenuScreen() {
               {urgentOffersList.length > 0 && (
                 <UrgentOffers 
                   restaurants={urgentOffersList} 
-                  onRestaurantClick={() => {
-                    Alert.alert("Navegando", "Pronto iremos al menú del restaurante.");
+                  onRestaurantClick={(idRestaurante) => {
+                  router.push(`/RestaurantMenu?id=${idRestaurante}`)
                   }} 
                 />
               )}
@@ -262,14 +262,12 @@ export default function MainMenuScreen() {
         </View>
       )}
 
-      {/* Pestaña de Perfil Placeholder */}
       {activeTab === 'profile' && (
         <View className="flex-1 items-center justify-center bg-gray-50">
           <Text className="text-gray-500">Pantalla de Perfil (Pendiente)</Text>
         </View>
       )}
 
-      {/* Pestaña de Favoritos */}
       {activeTab === 'favorites' && (
         <View className="flex-1 bg-gray-50 items-center justify-center p-6 text-center">
           <View className="w-20 h-20 bg-green-50 rounded-full items-center justify-center mb-4">
@@ -280,7 +278,6 @@ export default function MainMenuScreen() {
         </View>
       )}
 
-      {/* BARRA DE NAVEGACIÓN INFERIOR (TABS) */}
       <View className="bg-white border-t border-gray-100 flex-row items-center justify-around py-3 shadow-lg shrink-0 z-20">
         <TouchableOpacity onPress={() => setActiveTab('home')} className="items-center gap-1">
           <Home color={activeTab === 'home' ? "#90C659" : "#9ca3af"} size={24} />

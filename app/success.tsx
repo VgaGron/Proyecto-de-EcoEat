@@ -161,7 +161,6 @@ export default function RescueSuccessScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: COLORS.bg }}>
-      {/* Header */}
       <View className="items-center pt-16 pb-6 px-6">
         <View className="relative items-center justify-center">
           <View
@@ -183,7 +182,6 @@ export default function RescueSuccessScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* Resumen del pedido */}
         <View
           className="rounded-2xl p-5 mb-4 border"
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
@@ -226,7 +224,6 @@ export default function RescueSuccessScreen() {
             </Row>
           </View>
 
-          {/* Impacto ambiental */}
           <View
             className="rounded-xl px-4 py-3.5 flex-row items-center gap-3 mt-4"
             style={{ backgroundColor: COLORS.primaryDeep }}
@@ -244,7 +241,6 @@ export default function RescueSuccessScreen() {
           </View>
         </View>
 
-        {/* Código de retiro */}
         <View
           className="rounded-2xl p-5 items-center border"
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
