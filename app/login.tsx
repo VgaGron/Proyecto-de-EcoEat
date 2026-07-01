@@ -36,7 +36,7 @@ export default function LoginScreen() {
         const userData = profileSnap.data();
         
         if (userData.rol === 'restaurante') {
-          router.replace('/menuUser'); 
+          router.replace('/dashboardRestaurant'); 
         } else {
           router.replace('/menuUser');
         }
