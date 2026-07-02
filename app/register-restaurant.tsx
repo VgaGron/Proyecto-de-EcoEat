@@ -1,3 +1,4 @@
+import MapView, { Marker } from 'react-native-maps';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -272,50 +273,99 @@ export default function RestaurantRegisterScreen() {
             </View>
           )}
 
-          {step === 3 && (
-            <View>
-              <View className="items-center mb-6">
-                <Text className="font-bold text-gray-400 text-xs tracking-widest mb-1 uppercase">Paso 3 de 4</Text>
-                <Text className="font-black text-2xl text-gray-900">Operativa</Text>
-              </View>
+{step === 3 && (
+  <View>
+    <View className="items-center mb-6">
+      <Text className="font-bold text-gray-400 text-xs tracking-widest mb-1 uppercase">Paso 3 de 4</Text>
+      <Text className="font-black text-2xl text-gray-900">Operativa</Text>
+    </View>
 
-              <View className="w-full bg-gray-100 rounded-2xl flex-row px-4 pt-3 pb-12 mb-4 relative min-h-[100px]">
-                <MapPin color="#f97316" size={20} style={{marginTop: 2}} />
-                <TextInput 
-                  multiline numberOfLines={3} placeholder="Dirección Exacta" value={formData.address} onChangeText={t => setFormData({...formData, address: t})} 
-                  className="flex-1 ml-3 text-sm font-medium text-gray-800" style={{textAlignVertical: 'top'}} 
-                />
-                <TouchableOpacity 
-                  onPress={handleGetLocation}
-                  className={`absolute bottom-2 right-2 px-3 py-1.5 rounded-lg flex-row items-center gap-1 ${coordenadas ? 'bg-green-500' : 'bg-blue-500'}`}
-                >
-                  {coordenadas ? <Check color="white" size={14} /> : <MapPin color="white" size={14} />}
-                  <Text className="text-white text-xs font-bold">{coordenadas ? 'GPS Fijado' : 'Usar GPS'}</Text>
-                </TouchableOpacity>
-              </View>
+    {/* Campo de dirección */}
+    <View className="w-full bg-gray-100 rounded-2xl flex-row px-4 pt-3 pb-3 mb-3">
+      <MapPin color="#f97316" size={20} style={{marginTop: 2}} />
+      <TextInput 
+        multiline numberOfLines={2} placeholder="Dirección Exacta" value={formData.address} 
+        onChangeText={t => setFormData({...formData, address: t})} 
+        className="flex-1 ml-3 text-sm font-medium text-gray-800" style={{textAlignVertical: 'top'}} 
+      />
+    </View>
 
-              <Text className="font-bold text-xs text-gray-700 mb-2">Categoría</Text>
-              <View className="flex-row flex-wrap gap-2 mb-4">
-                {categories.map(cat => (
-                  <TouchableOpacity key={cat} onPress={() => setFormData({...formData, category: cat})} className={`px-3 py-2 rounded-xl border ${formData.category === cat ? 'bg-orange-500 border-orange-500' : 'bg-white border-gray-200'}`}>
-                    <Text className={`text-xs font-bold ${formData.category === cat ? 'text-white' : 'text-gray-600'}`}>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+    {/* Mapa interactivo */}
+    <Text className="font-bold text-xs text-gray-700 mb-2">
+      📍 Mueve el marcador para fijar la ubicación exacta
+    </Text>
+    <View style={{ height: 220, borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
+      <MapView
+        style={{ flex: 1 }}
+        provider="google"
+        initialRegion={{
+          latitude: coordenadas ? coordenadas.latitude : -9.0853,
+          longitude: coordenadas ? coordenadas.longitude : -78.5782,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        onPress={(e) => {
+          const { latitude, longitude } = e.nativeEvent.coordinate;
+          setCoordenadas(new GeoPoint(latitude, longitude));
+        }}
+      >
+        {coordenadas && (
+          <Marker
+            coordinate={{
+              latitude: coordenadas.latitude,
+              longitude: coordenadas.longitude,
+            }}
+            draggable
+            onDragEnd={(e) => {
+              const { latitude, longitude } = e.nativeEvent.coordinate;
+              setCoordenadas(new GeoPoint(latitude, longitude));
+            }}
+            pinColor="#f97316"
+          />
+        )}
+      </MapView>
+    </View>
 
-              <Text className="font-bold text-xs text-gray-700 mb-2">Documentos Legales</Text>
-              <View className="flex-row gap-3 mb-6">
-                <TouchableOpacity onPress={() => pickDocument(setLicenciaFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${licenciaFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
-                  {licenciaFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
-                  <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{licenciaFile ? 'Licencia Lista' : 'Subir Licencia'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => pickDocument(setSanidadFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${sanidadFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
-                  {sanidadFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
-                  <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{sanidadFile ? 'Carnet Listo' : 'Subir Carnet'}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+    {/* Botones GPS y estado */}
+    <View className="flex-row gap-2 mb-4">
+      <TouchableOpacity 
+        onPress={handleGetLocation}
+        className="flex-1 bg-blue-500 py-2.5 rounded-xl flex-row items-center justify-center gap-1"
+      >
+        <MapPin color="white" size={14} />
+        <Text className="text-white text-xs font-bold">Usar mi GPS</Text>
+      </TouchableOpacity>
+
+      {coordenadas && (
+        <View className="flex-1 bg-green-500 py-2.5 rounded-xl flex-row items-center justify-center gap-1">
+          <Check color="white" size={14} />
+          <Text className="text-white text-xs font-bold">Ubicación fijada</Text>
+        </View>
+      )}
+    </View>
+
+    <Text className="font-bold text-xs text-gray-700 mb-2">Categoría</Text>
+    <View className="flex-row flex-wrap gap-2 mb-4">
+      {categories.map(cat => (
+        <TouchableOpacity key={cat} onPress={() => setFormData({...formData, category: cat})} className={`px-3 py-2 rounded-xl border ${formData.category === cat ? 'bg-orange-500 border-orange-500' : 'bg-white border-gray-200'}`}>
+          <Text className={`text-xs font-bold ${formData.category === cat ? 'text-white' : 'text-gray-600'}`}>{cat}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+
+    <Text className="font-bold text-xs text-gray-700 mb-2">Documentos Legales</Text>
+    <View className="flex-row gap-3 mb-6">
+      <TouchableOpacity onPress={() => pickDocument(setLicenciaFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${licenciaFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+        {licenciaFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
+        <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{licenciaFile ? 'Licencia Lista' : 'Subir Licencia'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => pickDocument(setSanidadFile)} className={`flex-1 flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl ${sanidadFile ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+        {sanidadFile ? <FileCheck2 color="#16a34a" size={20} /> : <Upload color="#6b7280" size={20} />}
+        <Text className="text-[10px] font-bold text-gray-600 text-center mt-1">{sanidadFile ? 'Carnet Listo' : 'Subir Carnet'}</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
 
           {step === 4 && (
             <View>
