@@ -3,6 +3,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { UrgentOffers } from '../components/UrgentOffers';
 import { db } from '../firebase';
 
@@ -145,15 +146,39 @@ export default function MainMenuScreen() {
             </View>
           </View>
 
-          <View className="relative bg-gray-200 h-48 w-full shrink-0 overflow-hidden">
-            <View className="absolute inset-0 bg-green-50" />
-            {dynamicMapMarkers.map((marker) => (
-              <TouchableOpacity key={marker.id} className="absolute items-center" style={{ top: marker.top, left: marker.left }}>
-                <MapPin color="#90C659" size={32} fill="#90C659" />
-                <Text className="text-[10px] font-bold text-green-800 bg-white px-1.5 rounded-full mt-1 shadow-sm">{marker.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <View style={{ height: 200, width: '100%' }}>
+  <MapView
+    style={{ flex: 1 }}
+    provider="google"
+    initialRegion={{
+      latitude: -9.0853,
+      longitude: -78.5782,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    }}
+    showsUserLocation={true}
+  >
+    {filteredRestaurants.map((restaurant) => {
+      const coords = restaurant.ubicacion?.coordenadas;
+      if (!coords) return null;
+      return (
+        <Marker
+          key={restaurant.id}
+          coordinate={{
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          }}
+          title={restaurant.nombre}
+          pinColor="#90C659"
+          onPress={() => router.push({
+            pathname: '/RestaurantMenu',
+            params: { id: String(restaurant.id) },
+          })}
+        />
+      );
+    })}
+  </MapView>
+</View>
 
           {loading ? (
             <View className="flex-1 items-center justify-center bg-gray-50">
