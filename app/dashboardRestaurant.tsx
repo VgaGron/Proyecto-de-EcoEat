@@ -1,11 +1,10 @@
-import { useRouter, useFocusEffect } from 'expo-router';
-import { signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { AlertTriangle, Clock, Edit2, LogOut, Package, Plus, ShoppingBag, Store, X, Coins, Leaf, QrCode, UtensilsCrossed, Camera as CameraIcon } from 'lucide-react-native';
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Dimensions, StyleSheet } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { Camera as CameraIcon, Clock, Coins, Leaf, LogOut, Package, Plus, QrCode, ShoppingBag, UtensilsCrossed, X } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 
 import { auth, db } from '../firebase';
 
@@ -335,6 +334,15 @@ export default function DashboardRestaurantScreen() {
            </View>
          </View>
       </Modal>
+      <View className="absolute bottom-8 w-full px-6 items-center pointer-events-box-none z-20">
+        <TouchableOpacity 
+          onPress={() => router.push('/addProduct')}
+          className="bg-[#90C659] flex-row items-center justify-center gap-2 px-8 py-4 rounded-full shadow-lg shadow-[#90C659]/40 w-full active:scale-95 transition-transform pointer-events-auto"
+        >
+          <Plus color="white" size={24} />
+          <Text className="text-white font-bold text-lg">Publicar Excedentes</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

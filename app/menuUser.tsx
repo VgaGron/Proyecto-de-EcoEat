@@ -4,6 +4,9 @@ import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { UrgentOffers } from '../components/UrgentOffers';
+import { favoriteTab as FavoriteTab } from '../components/favoriteTab'; 
+import { profileUser as ProfileUser } from '../components/profileUser'; 
+
 import { db } from '../firebase';
 
 export default function MainMenuScreen() {
@@ -91,6 +94,7 @@ export default function MainMenuScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col">
       
+      {/* MENÚ LATERAL (DRAWER) */}
       {isMenuOpen && (
         <View className="absolute inset-0 z-50 flex-row" style={StyleSheet.absoluteFill}>
           <TouchableOpacity 
@@ -236,7 +240,7 @@ export default function MainMenuScreen() {
                           <Image source={{ uri: restaurant.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }} className="w-full h-full" resizeMode="cover" />
                           <View className="absolute top-3 right-3 bg-white px-2.5 py-1 rounded-full flex-row items-center gap-1 shadow-sm">
                             <Star color="#facc15" fill="#facc15" size={14} />
-                            <Text className="text-xs font-bold text-gray-700">{restaurant.ratingPromedio}</Text>
+                            <Text className="text-xs font-bold text-gray-700">{restaurant.ratingPromedio || "4.5"}</Text>
                           </View>
                         </View>
                         <View className="p-4">
@@ -262,21 +266,8 @@ export default function MainMenuScreen() {
         </View>
       )}
 
-      {activeTab === 'profile' && (
-        <View className="flex-1 items-center justify-center bg-gray-50">
-          <Text className="text-gray-500">Pantalla de Perfil (Pendiente)</Text>
-        </View>
-      )}
-
-      {activeTab === 'favorites' && (
-        <View className="flex-1 bg-gray-50 items-center justify-center p-6 text-center">
-          <View className="w-20 h-20 bg-green-50 rounded-full items-center justify-center mb-4">
-            <Star color="#90C659" fill="#90C659" size={40} opacity={0.5} />
-          </View>
-          <Text className="font-bold text-xl text-gray-800 mb-2">Aún no hay favoritos</Text>
-          <Text className="text-gray-500 text-sm text-center">Los restaurantes que guardes aparecerán en esta lista.</Text>
-        </View>
-      )}
+      {activeTab === 'favorites' && <FavoriteTab />}
+      {activeTab === 'profile' && <ProfileUser />}
 
       <View className="bg-white border-t border-gray-100 flex-row items-center justify-around py-3 shadow-lg shrink-0 z-20">
         <TouchableOpacity onPress={() => setActiveTab('home')} className="items-center gap-1">
