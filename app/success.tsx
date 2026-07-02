@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
+import QRCode from 'react-native-qrcode-svg';
 import {
   Bike,
   CheckCircle2,
@@ -249,31 +250,17 @@ export default function RescueSuccessScreen() {
             Código de retiro
           </Text>
 
-          <View
-            className="w-52 h-52 rounded-2xl items-center justify-center p-4 mb-4 relative border-2"
-            style={{ borderColor: COLORS.primary, backgroundColor: COLORS.surface }}
-          >
-            <View className="w-full h-full flex-row flex-wrap justify-between content-between">
-              {Array.from({ length: 64 }).map((_, i) => {
-                const isBlack =
-                  (orderIdValue.charCodeAt(i % (orderIdValue.length || 1)) || 0) % 2 === 0;
-                return (
-                  <View
-                    key={i}
-                    className="w-[11%] h-[11%] rounded-sm m-[0.5%]"
-                    style={{ backgroundColor: isBlack ? COLORS.ink : COLORS.surface }}
-                  />
-                );
-              })}
-            </View>
-            <View className="absolute items-center justify-center w-full h-full">
-              <View
-                className="w-12 h-12 rounded-lg items-center justify-center"
-                style={{ backgroundColor: COLORS.primaryDeep }}
-              >
-                <CheckCircle2 color="white" size={22} strokeWidth={2.4} />
-              </View>
-            </View>
+          <View className="w-52 h-52 border-4 border-[#90C659] rounded-2xl items-center justify-center bg-white mb-4 shadow-sm relative overflow-hidden">
+            {typeof orderId === 'string' ? (
+              <QRCode
+                value={orderId} 
+                size={180}
+                color="#1f2937" 
+                backgroundColor="white"
+              />
+            ) : (
+              <Text className="text-gray-400">Generando...</Text>
+            )}
           </View>
 
           <View className="items-center w-full gap-2">
