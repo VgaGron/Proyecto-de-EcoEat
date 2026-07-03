@@ -1,4 +1,3 @@
-import MapView, { Marker } from 'react-native-maps';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -8,6 +7,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { AlertTriangle, ArrowLeft, Camera, Check, CreditCard, FileCheck2, FileText, Lock, Mail, MapPin, Store, Upload, User } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { auth, db, storage } from '../firebase';
 
 export default function RestaurantRegisterScreen() {
@@ -235,43 +235,56 @@ export default function RestaurantRegisterScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
-                <Mail color="#90C659" size={20} />
-                <TextInput placeholder="Correo corporativo o personal" value={formData.email} onChangeText={t => setFormData({...formData, email: t})} keyboardType="email-address" autoCapitalize="none" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
-                <Lock color="#90C659" size={20} />
-                <TextInput placeholder="Contraseña (mín 6)" value={formData.password} onChangeText={t => setFormData({...formData, password: t})} secureTextEntry className="flex-1 ml-3 text-sm font-medium text-gray-800" />
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-6">
-                <User color="#90C659" size={20} />
-                <TextInput placeholder="Nombre del dueño" value={formData.ownerName} onChangeText={t => setFormData({...formData, ownerName: t})} className="flex-1 ml-3 text-sm font-medium text-gray-800" />
-              </View>
-            </View>
+<Text className="font-bold text-xs text-gray-500 mb-1 ml-1">Correo electrónico</Text>
+<View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
+  <Mail color="#90C659" size={20} />
+  <TextInput placeholder="ej. minegocio@gmail.com" value={formData.email} onChangeText={t => setFormData({...formData, email: t})} keyboardType="email-address" autoCapitalize="none" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
+</View>
+
+<Text className="font-bold text-xs text-gray-500 mb-1 ml-1">Contraseña</Text>
+<View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
+  <Lock color="#90C659" size={20} />
+  <TextInput placeholder="Mínimo 6 caracteres" value={formData.password} onChangeText={t => setFormData({...formData, password: t})} secureTextEntry className="flex-1 ml-3 text-sm font-medium text-gray-800" />
+</View>
+
+<Text className="font-bold text-xs text-gray-500 mb-1 ml-1">Nombre del dueño o representante</Text>
+<View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-6">
+  <User color="#90C659" size={20} />
+  <TextInput placeholder="ej. Juan Pérez" value={formData.ownerName} onChangeText={t => setFormData({...formData, ownerName: t})} className="flex-1 ml-3 text-sm font-medium text-gray-800" />
+</View>
+</View>
           )}
 
-          {step === 2 && (
-            <View>
-              <View className="items-center mb-6">
-                <Text className="font-bold text-gray-400 text-xs tracking-widest mb-1 uppercase">Paso 2 de 4</Text>
-                <Text className="font-black text-2xl text-gray-900">Identidad Legal</Text>
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
-                <FileText color="#3b82f6" size={20} />
-                <TextInput maxLength={11} placeholder="RUC (11 dígitos)" value={formData.ruc} onChangeText={t => setFormData({...formData, ruc: t.replace(/[^0-9]/g, '')})} keyboardType="numeric" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
-                <TextInput placeholder="Razón Social (Ej. S.A.C.)" value={formData.razonSocial} onChangeText={t => setFormData({...formData, razonSocial: t})} className="flex-1 text-sm font-medium text-gray-800" />
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
-                <TextInput placeholder="Nombre Comercial (Ej. La Molienda)" value={formData.nombreComercial} onChangeText={t => setFormData({...formData, nombreComercial: t})} className="flex-1 text-sm font-medium text-gray-800" />
-              </View>
-              <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-6">
-                <User color="#3b82f6" size={20} />
-                <TextInput maxLength={8} placeholder="DNI Rep. Legal" value={formData.dni} onChangeText={t => setFormData({...formData, dni: t.replace(/[^0-9]/g, '')})} keyboardType="numeric" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
-              </View>
-            </View>
-          )}
+{step === 2 && (
+  <View>
+    <View className="items-center mb-6">
+      <Text className="font-bold text-gray-400 text-xs tracking-widest mb-1 uppercase">Paso 2 de 4</Text>
+      <Text className="font-black text-2xl text-gray-900">Identidad Legal</Text>
+    </View>
+
+    <Text className="font-bold text-xs text-gray-500 mb-1 ml-1">RUC del negocio</Text>
+    <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
+      <FileText color="#3b82f6" size={20} />
+      <TextInput maxLength={11} placeholder="Ej. 20123456789" value={formData.ruc} onChangeText={t => setFormData({...formData, ruc: t.replace(/[^0-9]/g, '')})} keyboardType="numeric" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
+    </View>
+
+    <Text className="font-bold text-xs text-gray-500 mb-1 ml-1">Razón Social</Text>
+    <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
+      <TextInput placeholder="Ej. Panadería El Sol S.A.C." value={formData.razonSocial} onChangeText={t => setFormData({...formData, razonSocial: t})} className="flex-1 text-sm font-medium text-gray-800" />
+    </View>
+
+    <Text className="font-bold text-xs text-gray-500 mb-1 ml-1">Nombre Comercial</Text>
+    <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-4">
+      <TextInput placeholder="Ej. La Molienda" value={formData.nombreComercial} onChangeText={t => setFormData({...formData, nombreComercial: t})} className="flex-1 text-sm font-medium text-gray-800" />
+    </View>
+
+    <Text className="font-bold text-xs text-gray-500 mb-1 ml-1">DNI del Representante Legal</Text>
+    <View className="w-full bg-gray-100 rounded-2xl flex-row items-center px-4 h-14 mb-6">
+      <User color="#3b82f6" size={20} />
+      <TextInput maxLength={8} placeholder="Ej. 12345678" value={formData.dni} onChangeText={t => setFormData({...formData, dni: t.replace(/[^0-9]/g, '')})} keyboardType="numeric" className="flex-1 ml-3 text-sm font-medium text-gray-800" />
+    </View>
+  </View>
+)}
 
 {step === 3 && (
   <View>
