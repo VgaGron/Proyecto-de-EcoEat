@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { AlertTriangle, Edit2, Package, Plus, RefreshCw, X } from 'lucide-react-native';
+import { AlertTriangle, Clock, Edit2, Package, Plus, RefreshCw, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../firebase';
@@ -16,7 +16,7 @@ const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
 
 export function dishesTab() {
   const router = useRouter();
-  
+
   const [activos, setActivos] = useState<any[]>([]);
   const [historial, setHistorial] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,15 +53,8 @@ export function dishesTab() {
 
       allItems.forEach(item => {
         const isAgotado = (item?.cantidadDisponible || 0) <= 0;
-        let isExpired = false;
-
         const expDate = getAbsoluteDate(item.fecha_creacion, item.horaFin);
-        
-        if (expDate) {
-          isExpired = now > expDate;
-        } else {
-          isExpired = true; 
-        }
+        const isExpired = expDate ? now > expDate : true;
 
         if (isExpired || isAgotado) {
           listaHistorial.push(item);
@@ -105,18 +98,17 @@ export function dishesTab() {
     try {
       setIsSaving(true);
       const itemRef = doc(db, editingItem.collectionName, editingItem.id);
-
       await updateDoc(itemRef, {
         precioOriginal: Number(editPrecioOriginal),
         precioOferta: Number(editPrecioOferta),
         cantidadDisponible: Number(editStock),
         horaInicio: editHoraInicio,
         horaFin: editHoraFin,
-        fecha_creacion: new Date().toISOString() 
+        fecha_creacion: new Date().toISOString()
       });
 
       setEditModalVisible(false);
-      await fetchProducts(); 
+      await fetchProducts();
       Alert.alert('¡Listo!', 'Producto reactivado/actualizado correctamente.');
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar el producto.');
@@ -125,45 +117,98 @@ export function dishesTab() {
     }
   };
 
+  const descuento = (precioOriginal: number, precioOferta: number) =>
+    precioOriginal > 0 ? Math.round((1 - precioOferta / precioOriginal) * 100) : 0;
+
   const renderProductList = (items: any[]) => {
     if (items.length === 0) {
       return (
-        <View className="bg-white rounded-2xl p-8 items-center border border-gray-100 mt-4">
-          <Package color="#d1d5db" size={40} />
-          <Text className="text-gray-400 text-sm text-center mt-3">No hay productos en esta sección.</Text>
+        <View className="flex-1 items-center justify-center py-20">
+          <View className="w-20 h-20 bg-green-50 rounded-full items-center justify-center mb-4">
+            <Package color="#90C659" size={36} />
+          </View>
+          <Text className="font-black text-lg text-gray-700 mb-2">
+            {viewMode === 'activos' ? '¡Todo listo para publicar!' : 'Sin historial aún'}
+          </Text>
+          <Text className="text-gray-400 text-sm text-center px-8">
+            {viewMode === 'activos'
+              ? 'Toca el botón verde para publicar tus excedentes del día.'
+              : 'Tus productos vencidos o agotados aparecerán aquí.'}
+          </Text>
         </View>
       );
     }
 
     return items.map((item) => {
       const isAgotado = (item.cantidadDisponible || 0) <= 0;
+      const desc = descuento(item.precioOriginal, item.precioOferta);
+      const isHistorial = viewMode === 'historial';
+
       return (
-        <View key={item.id} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-row h-28 mb-3 ${viewMode === 'historial' ? 'opacity-60' : ''}`}>
-          <Image source={{ uri: item.imagenUrl }} className="w-24 h-full" resizeMode="cover" />
-          <View className="flex-1 p-3 justify-between">
-            <View>
-              <View className="flex-row items-center gap-1.5 mb-0.5 flex-wrap">
-                <View className={`px-1.5 py-0.5 rounded ${item.tipo === 'Pack Sorpresa' ? 'bg-green-100' : 'bg-blue-50'}`}>
-                  <Text className={`text-[9px] font-bold ${item.tipo === 'Pack Sorpresa' ? 'text-green-700' : 'text-blue-600'}`}>{item.tipo}</Text>
+        <View key={item.id} className={`bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm mb-4 ${isHistorial ? 'opacity-70' : ''}`}>
+          <View className="flex-row">
+            {/* Imagen */}
+            <View className="w-28 h-32 bg-gray-100">
+              <Image
+                source={{ uri: item.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+              {desc > 0 && (
+                <View className="absolute top-2 left-2 bg-[#90C659] px-1.5 py-0.5 rounded-full">
+                  <Text className="text-white text-[9px] font-black">-{desc}%</Text>
                 </View>
-                {isAgotado && (
-                  <View className="bg-red-50 px-1.5 py-0.5 rounded flex-row items-center gap-1">
-                    <AlertTriangle color="#dc2626" size={10} />
-                    <Text className="text-[9px] font-bold text-red-600">Agotado</Text>
-                  </View>
-                )}
-              </View>
-              <Text className="font-bold text-sm text-gray-800" numberOfLines={1}>{item.nombre}</Text>
+              )}
             </View>
-            <View className="flex-row items-center justify-between">
+
+            {/* Contenido */}
+            <View className="flex-1 p-3 justify-between">
               <View>
-                <Text className="text-[10px] text-gray-500 font-medium">Stock: {item.cantidadDisponible ?? 0}</Text>
-                <Text className="text-[10px] text-orange-600 font-medium">{item.horaInicio} a {item.horaFin}</Text>
+                {/* Badges */}
+                <View className="flex-row items-center gap-1.5 mb-1 flex-wrap">
+                  <View className={`px-2 py-0.5 rounded-full ${item.tipo === 'Pack Sorpresa' ? 'bg-green-100' : 'bg-blue-50'}`}>
+                    <Text className={`text-[9px] font-bold ${item.tipo === 'Pack Sorpresa' ? 'text-green-700' : 'text-blue-600'}`}>
+                      {item.tipo === 'Pack Sorpresa' ? '🎁 Pack' : '🍽️ Plato'}
+                    </Text>
+                  </View>
+                  {isAgotado && (
+                    <View className="bg-red-50 px-2 py-0.5 rounded-full flex-row items-center gap-0.5">
+                      <AlertTriangle color="#dc2626" size={9} />
+                      <Text className="text-[9px] font-bold text-red-600">Agotado</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Nombre */}
+                <Text className="font-black text-sm text-gray-800 mb-1" numberOfLines={1}>{item.nombre}</Text>
+
+                {/* Horario */}
+                <View className="flex-row items-center gap-1">
+                  <Clock color="#f97316" size={11} />
+                  <Text className="text-[10px] text-orange-500 font-bold">
+                    {item.horaInicio && item.horaFin ? `${item.horaInicio} - ${item.horaFin}` : 'Sin horario'}
+                  </Text>
+                </View>
               </View>
-              <View className="flex-row items-center gap-2">
-                <Text className="font-black text-[#90C659] text-sm">S/ {Number(item.precioOferta || 0).toFixed(2)}</Text>
-                <TouchableOpacity onPress={() => openEditModal(item)} className={`p-1.5 rounded-lg ${viewMode === 'historial' ? 'bg-[#90C659]/10' : 'bg-gray-100'}`}>
-                  {viewMode === 'historial' ? <RefreshCw color="#90C659" size={14} /> : <Edit2 color="#4b5563" size={14} />}
+
+              {/* Precios y acciones */}
+              <View className="flex-row items-end justify-between mt-2">
+                <View>
+                  {item.precioOriginal > 0 && (
+                    <Text className="text-[10px] text-gray-400 line-through">S/ {Number(item.precioOriginal).toFixed(2)}</Text>
+                  )}
+                  <Text className="font-black text-[#90C659] text-base leading-none">S/ {Number(item.precioOferta || 0).toFixed(2)}</Text>
+                  <Text className="text-[10px] text-gray-400 mt-0.5">Stock: {item.cantidadDisponible ?? 0}</Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => openEditModal(item)}
+                  className={`flex-row items-center gap-1.5 px-3 py-2 rounded-xl ${isHistorial ? 'bg-[#90C659]' : 'bg-gray-100'}`}
+                >
+                  {isHistorial
+                    ? <><RefreshCw color="white" size={13} /><Text className="text-white text-[10px] font-bold">Reactivar</Text></>
+                    : <><Edit2 color="#4b5563" size={13} /><Text className="text-gray-600 text-[10px] font-bold">Editar</Text></>
+                  }
                 </TouchableOpacity>
               </View>
             </View>
@@ -175,74 +220,117 @@ export function dishesTab() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="px-6 pt-6 mb-4">
-        <View className="flex-row bg-gray-200/50 p-1 rounded-xl">
-          <TouchableOpacity onPress={() => setViewMode('activos')} className={`flex-1 py-2 items-center rounded-lg ${viewMode === 'activos' ? 'bg-white shadow-sm' : ''}`}>
-            <Text className={`text-xs font-bold ${viewMode === 'activos' ? 'text-gray-800' : 'text-gray-500'}`}>Activos ({activos.length})</Text>
+
+      {/* TABS */}
+      <View className="px-4 pt-5 pb-3">
+        <View className="flex-row bg-gray-100 p-1 rounded-2xl">
+          <TouchableOpacity
+            onPress={() => setViewMode('activos')}
+            className={`flex-1 py-2.5 items-center rounded-xl ${viewMode === 'activos' ? 'bg-white shadow-sm' : ''}`}
+          >
+            <Text className={`text-xs font-black ${viewMode === 'activos' ? 'text-[#90C659]' : 'text-gray-400'}`}>
+              ✅ Activos ({activos.length})
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setViewMode('historial')} className={`flex-1 py-2 items-center rounded-lg ${viewMode === 'historial' ? 'bg-white shadow-sm' : ''}`}>
-            <Text className={`text-xs font-bold ${viewMode === 'historial' ? 'text-gray-800' : 'text-gray-500'}`}>Historial ({historial.length})</Text>
+          <TouchableOpacity
+            onPress={() => setViewMode('historial')}
+            className={`flex-1 py-2.5 items-center rounded-xl ${viewMode === 'historial' ? 'bg-white shadow-sm' : ''}`}
+          >
+            <Text className={`text-xs font-black ${viewMode === 'historial' ? 'text-gray-700' : 'text-gray-400'}`}>
+              🕐 Historial ({historial.length})
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        {loading ? <ActivityIndicator size="large" color="#90C659" className="mt-10" /> : renderProductList(viewMode === 'activos' ? activos : historial)}
+      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+        {loading
+          ? <View className="items-center py-20"><ActivityIndicator size="large" color="#90C659" /></View>
+          : renderProductList(viewMode === 'activos' ? activos : historial)
+        }
       </ScrollView>
 
-      <View className="absolute bottom-6 w-full px-6 items-center pointer-events-box-none z-20">
-        <TouchableOpacity onPress={() => router.push('/addProduct')} className="bg-[#90C659] flex-row items-center justify-center gap-2 px-8 py-4 rounded-full shadow-lg shadow-[#90C659]/40 w-full">
-          <Plus color="white" size={24} />
-          <Text className="text-white font-bold text-lg">Publicar Excedentes</Text>
+      {/* BOTÓN PUBLICAR */}
+      <View className="absolute bottom-6 w-full px-4 z-20">
+        <TouchableOpacity
+          onPress={() => router.push('/addProduct')}
+          className="bg-[#90C659] flex-row items-center justify-center gap-2 py-4 rounded-2xl w-full"
+          style={{ shadowColor: '#90C659', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 }}
+        >
+          <Plus color="white" size={22} />
+          <Text className="text-white font-black text-base">Publicar Excedentes</Text>
         </TouchableOpacity>
       </View>
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL EDICIÓN */}
       <Modal visible={editModalVisible} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white rounded-t-3xl p-6 pb-10">
+
             <View className="flex-row items-center justify-between mb-5">
-              <Text className="font-bold text-lg text-gray-800">{viewMode === 'historial' ? 'Reactivar Producto' : 'Editar Producto'}</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)} className="p-1"><X color="#6b7280" size={22} /></TouchableOpacity>
+              <View>
+                <Text className="font-black text-lg text-gray-800">
+                  {viewMode === 'historial' ? '♻️ Reactivar Producto' : '✏️ Editar Producto'}
+                </Text>
+                <Text className="text-xs text-gray-400 mt-0.5">{editingItem?.nombre}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} className="p-2 bg-gray-100 rounded-full">
+                <X color="#6b7280" size={18} />
+              </TouchableOpacity>
             </View>
 
             <View className="flex-row gap-3 mb-3">
-              <View className="flex-1">
-                <Text className="font-bold text-xs text-gray-700 mb-1">Precio original</Text>
-                <TextInput value={editPrecioOriginal} onChangeText={t => setEditPrecioOriginal(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="bg-gray-100 rounded-xl px-3 h-12 text-sm text-gray-800" />
+              <View className="flex-1 bg-gray-50 rounded-xl p-3">
+                <Text className="font-bold text-xs text-gray-400 mb-1">Precio original</Text>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-gray-400 text-sm">S/.</Text>
+                  <TextInput value={editPrecioOriginal} onChangeText={t => setEditPrecioOriginal(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="flex-1 text-base font-black text-gray-700" />
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="font-bold text-xs text-gray-700 mb-1">Precio oferta</Text>
-                <TextInput value={editPrecioOferta} onChangeText={t => setEditPrecioOferta(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="bg-gray-100 rounded-xl px-3 h-12 text-sm text-gray-800" />
-              </View>
-            </View>
-
-            <View className="flex-row gap-3 mb-6">
-              <View className="flex-1">
-                <Text className="font-bold text-xs text-gray-700 mb-1">Nuevo Stock</Text>
-                <TextInput value={editStock} onChangeText={t => setEditStock(t.replace(/[^0-9]/g, ''))} keyboardType="numeric" className="bg-gray-100 rounded-xl px-3 h-12 text-sm text-gray-800" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-bold text-[10px] text-gray-700 mb-1">Inicia (Ej. 14:00)</Text>
-                <TextInput value={editHoraInicio} onChangeText={setEditHoraInicio} maxLength={5} className="bg-gray-100 rounded-xl px-3 h-12 text-sm text-gray-800" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-bold text-[10px] text-gray-700 mb-1">Termina (Ej. 18:00)</Text>
-                <TextInput value={editHoraFin} onChangeText={setEditHoraFin} maxLength={5} className="bg-gray-100 rounded-xl px-3 h-12 text-sm text-gray-800" />
+              <View className="flex-1 bg-green-50 rounded-xl p-3 border border-green-100">
+                <Text className="font-bold text-xs text-green-500 mb-1">Precio oferta</Text>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-green-400 text-sm">S/.</Text>
+                  <TextInput value={editPrecioOferta} onChangeText={t => setEditPrecioOferta(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="flex-1 text-base font-black text-green-700" />
+                </View>
               </View>
             </View>
 
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} className={`w-full py-4 rounded-2xl items-center flex-row justify-center gap-2 ${isSaving ? 'bg-gray-300' : 'bg-[#90C659]'}`}>
-              {isSaving ? <ActivityIndicator color="white" /> : (
-                <>
-                  {viewMode === 'historial' && <RefreshCw color="white" size={18} />}
-                  <Text className="text-white font-bold text-base">{viewMode === 'historial' ? 'Reactivar y Publicar' : 'Guardar cambios'}</Text>
-                </>
-              )}
+            <View className="flex-row gap-3 mb-5">
+              <View className="flex-1 bg-gray-50 rounded-xl p-3">
+                <Text className="font-bold text-xs text-gray-400 mb-1">Stock</Text>
+                <TextInput value={editStock} onChangeText={t => setEditStock(t.replace(/[^0-9]/g, ''))} keyboardType="numeric" className="text-base font-black text-gray-700" />
+              </View>
+              <View className="flex-1 bg-gray-50 rounded-xl p-3">
+                <Text className="font-bold text-xs text-gray-400 mb-1">🕐 Inicia</Text>
+                <TextInput value={editHoraInicio} onChangeText={setEditHoraInicio} maxLength={5} placeholder="14:00" className="text-base font-black text-gray-700" />
+              </View>
+              <View className="flex-1 bg-gray-50 rounded-xl p-3">
+                <Text className="font-bold text-xs text-gray-400 mb-1">🕐 Termina</Text>
+                <TextInput value={editHoraFin} onChangeText={setEditHoraFin} maxLength={5} placeholder="18:00" className="text-base font-black text-gray-700" />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSaveEdit}
+              disabled={isSaving}
+              className={`w-full py-4 rounded-2xl items-center flex-row justify-center gap-2 ${isSaving ? 'bg-gray-300' : 'bg-[#90C659]'}`}
+            >
+              {isSaving
+                ? <ActivityIndicator color="white" />
+                : <>
+                    {viewMode === 'historial' && <RefreshCw color="white" size={18} />}
+                    <Text className="text-white font-black text-base">
+                      {viewMode === 'historial' ? 'Reactivar y Publicar' : 'Guardar cambios'}
+                    </Text>
+                  </>
+              }
             </TouchableOpacity>
+
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }

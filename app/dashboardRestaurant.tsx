@@ -317,7 +317,7 @@ export default function DashboardRestaurantScreen() {
                </View>
              )}
 
-             <View className="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
                <View className="w-64 h-64 border-4 border-[#90C659] rounded-3xl relative">
                   <View className="w-full h-0.5 bg-white absolute top-1/2 opacity-50" />
                </View>
