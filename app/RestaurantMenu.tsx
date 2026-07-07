@@ -1,30 +1,39 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Leaf, Minus, Plus, ShoppingCart, Tag } from "lucide-react-native";
+import { ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { ActionButton } from "../components/ActionButton";
-import { AlertComponent } from "../components/AlertComponent"; // <-- NUESTRO NUEVO MODAL
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { AlertComponent } from "../components/AlertComponent";
+import { RestaurantCheckoutBar } from "../components/RestaurantCheckoutBar";
+import { RestaurantMenuItemCard, type RestaurantMenuItem } from "../components/RestaurantMenuItemCard";
+import { RestaurantMenuSection } from "../components/RestaurantMenuSection";
 import { auth, db } from "../firebase";
+
+const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
+  if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
+  const date = new Date(fechaCreacion);
+  if (isNaN(date.getTime())) return null;
+  const [h, m] = horaStr.split(':').map(Number);
+  date.setHours(h, m, 0, 0);
+  return date;
+};
 
 export default function RestaurantMenuScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams(); 
-
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
-  const [packs, setPacks] = useState<any[]>([]);
-  const [platos, setPlatos] = useState<any[]>([]);
+  const [packs, setPacks] = useState<RestaurantMenuItem[]>([]);
+  const [platos, setPlatos] = useState<RestaurantMenuItem[]>([]);
   const [restaurantName, setRestaurantName] = useState("Cargando...");
+  const [restaurantIsActive, setRestaurantIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [userAllergies, setUserAllergies] = useState<string[]>([]);
-
   const [modalVisible, setModalVisible] = useState(false);
   const [conflictAllergies, setConflictAllergies] = useState<string[]>([]);
   const [pendingItemToAdd, setPendingItemToAdd] = useState<any>(null);
 
-  const formatData = (docSnap: any, collectionName: string) => {
+  const formatData = (docSnap: any, collectionName: string): RestaurantMenuItem => {
     const data = docSnap.data();
     
     let alergenosSeguros: string[] = [];
@@ -42,7 +51,9 @@ export default function RestaurantMenuScreen() {
       originalPrice: Number(data.precioOriginal ?? data.originalPrice ?? 0),
       discountPrice: Number(data.precioOferta ?? data.discountPrice ?? 0),
       category: data.categoria ?? data.category ?? "Variado",
-      timeLeft: data.tiempoRestante ?? data.timeLeft ?? "Pronto",
+      horaInicio: data.horaInicio || null, 
+      horaFin: data.horaFin || null,
+      fecha_creacion: data.fecha_creacion || null, 
       stock: Number(data.cantidadDisponible ?? data.stock ?? 1),
       image: data.imagenUrl ?? data.image ?? "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400",
       alergenos: alergenosSeguros 
@@ -68,7 +79,9 @@ export default function RestaurantMenuScreen() {
         const restRef = doc(db, "restaurantes", id);
         const restSnap = await getDoc(restRef);
         if (restSnap.exists()) {
-          setRestaurantName(restSnap.data().nombre);
+          const restData = restSnap.data();
+          setRestaurantName(restData.nombre);
+          setRestaurantIsActive(restData.activo !== false);
         }
       }
 
@@ -94,6 +107,37 @@ export default function RestaurantMenuScreen() {
     fetchMenuData();
   }, [id]);
 
+  const getItemStatus = (item: RestaurantMenuItem) => {
+    let isUpcoming = false;
+    let isExpired = false;
+    const now = new Date();
+
+    
+    const startDate = getAbsoluteDate(item.fecha_creacion || "", item.horaInicio || "");
+    const expDate = getAbsoluteDate(item.fecha_creacion || "", item.horaFin || "");
+
+    if (startDate && expDate) {
+      if (now < startDate) {
+        isUpcoming = true; 
+      } else if (now > expDate) {
+        isExpired = true; 
+      }
+    } else {
+      isExpired = true; 
+    }
+
+    const userAllergiesLower = userAllergies.map((a) => a.toLowerCase().trim());
+    const platoAllergenosLower = (item.alergenos || []).map((a: string) => a.toLowerCase().trim());
+    const isDangerous = platoAllergenosLower.some((a: string) => userAllergiesLower.includes(a));
+
+    return { isUpcoming, isExpired, isDangerous };
+  };
+
+  const isItemVisibleWhenRestaurantActive = (item: RestaurantMenuItem) => {
+    const { isUpcoming, isExpired } = getItemStatus(item);
+    return !isUpcoming && !isExpired && item.stock > 0;
+  };
+
   const applyQuantityChange = (dishId: string, delta: number, stock: number, name: string) => {
     setQuantities((prev) => {
       const currentQty = prev[dishId] || 0;
@@ -118,11 +162,11 @@ export default function RestaurantMenuScreen() {
     const alergenosPlatoSeguro = Array.isArray(item.alergenos) ? item.alergenos : [];
     const userAllergiesLower = userAllergies.map(a => a.toLowerCase().trim());
     const platoAllergenosLower = alergenosPlatoSeguro.map((a: string) => a.toLowerCase().trim());
+
     const commonAllergiesLower = platoAllergenosLower.filter((a: string) => userAllergiesLower.includes(a));
 
     if (commonAllergiesLower.length > 0) {
       const originalNames = alergenosPlatoSeguro.filter((a: string) => userAllergiesLower.includes(a.toLowerCase().trim()));
-      
       setConflictAllergies(originalNames);
       setPendingItemToAdd(item);
       setModalVisible(true);
@@ -144,7 +188,9 @@ export default function RestaurantMenuScreen() {
     setPendingItemToAdd(null);
   };
 
-  const allItems = [...packs, ...platos];
+  const visiblePacks = restaurantIsActive ? packs.filter(isItemVisibleWhenRestaurantActive) : packs;
+  const visiblePlatos = restaurantIsActive ? platos.filter(isItemVisibleWhenRestaurantActive) : platos;
+  const allItems = [...visiblePacks, ...visiblePlatos];
   const totalItems = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
   
   const totalAmount = allItems.reduce((sum, item) => {
@@ -172,113 +218,26 @@ export default function RestaurantMenuScreen() {
     });
   };
 
-  const renderItemCard = (item: any, isSurprisePack: boolean) => {
-    const isAgotado = item.stock <= 0;
-    
-    const userAllergiesLower = userAllergies.map(a => a.toLowerCase().trim());
-    const platoAllergenosLower = (item.alergenos || []).map((a: string) => a.toLowerCase().trim());
-    const isDangerous = platoAllergenosLower.some((a: string) => userAllergiesLower.includes(a));
+  const renderItemCard = (item: RestaurantMenuItem, isSurprisePack: boolean) => {
+    const { isUpcoming, isExpired, isDangerous } = getItemStatus(item);
 
     return (
-      <View key={item.id} className={`bg-white border ${isSurprisePack ? 'border-[#90C659]/30' : 'border-gray-200'} rounded-xl overflow-hidden shadow-sm flex-row h-36 mb-4 ${isAgotado ? 'opacity-60' : ''}`}>
-        
-        <View className="w-1/3 bg-gray-100 relative">
-          <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
-          
-          {isAgotado ? (
-            <View className="absolute top-0 left-0 w-full bg-gray-600 py-1 items-center z-10">
-              <Text className="text-white text-[10px] font-black tracking-widest">AGOTADO</Text>
-            </View>
-          ) : item.stock === 1 ? (
-            <View className="absolute top-0 left-0 w-full bg-red-500 py-0.5 items-center z-10">
-              <Text className="text-white text-[9px] font-bold">¡Último!</Text>
-            </View>
-          ) : null}
-
-          {isSurprisePack && (
-            <View className="absolute bottom-0 w-full bg-[#90C659]/90 py-0.5 items-center">
-              <Text className="text-white text-[8px] font-black tracking-widest uppercase">Sorpresa</Text>
-            </View>
-          )}
-        </View>
-
-        <View className="p-3 flex-1 flex-col justify-between">
-          <View>
-            <View className="flex-row justify-between items-start mb-1">
-              <Text className="font-bold text-sm text-gray-800 flex-1 pr-2 leading-tight" numberOfLines={2}>
-                {item.name}
-              </Text>
-              {isDangerous ? (
-                 <AlertTriangle color="#ef4444" size={16} /> 
-              ) : item.category === "Vegano" ? (
-                 <Leaf color="#90C659" size={16} />
-              ) : null}
-            </View>
-            
-            <Text className="text-[10px] text-gray-500 mb-1.5" numberOfLines={2}>
-              {item.description}
-            </Text>
-
-            <View className="flex-row gap-2 items-center">
-              <View className="bg-gray-100 px-1.5 py-0.5 rounded flex-row items-center gap-1">
-                <Tag color="#4b5563" size={10} />
-                <Text className="text-[9px] text-gray-600 font-medium">{item.category}</Text>
-              </View>
-              {!isAgotado && (
-                <View className="bg-orange-50 px-1.5 py-0.5 rounded flex-row items-center gap-0.5">
-                  <Clock color="#ea580c" size={10} />
-                  <Text className="text-[9px] text-orange-600 font-bold">exp. {item.timeLeft}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View className="flex-row items-end justify-between mt-2">
-            <View>
-              <Text className="text-[10px] text-gray-400 line-through">
-                S/. {item.originalPrice?.toFixed(2)}
-              </Text>
-              <Text className="font-black text-[#90C659] text-base leading-none">
-                S/. {item.discountPrice?.toFixed(2)}
-              </Text>
-            </View>
-
-            {isAgotado ? (
-              <View className="bg-gray-200 px-3 py-1.5 rounded-lg">
-                <Text className="text-gray-500 text-[10px] font-bold">Sin Stock</Text>
-              </View>
-            ) : quantities[item.id] ? (
-              <View className="flex-row items-center gap-2 bg-gray-50 border border-gray-200 rounded-full p-1">
-                <TouchableOpacity 
-                  onPress={() => handleQuantityChange(item, -1)}
-                  className="w-6 h-6 rounded-full bg-white items-center justify-center shadow-sm"
-                >
-                  <Minus color="#4b5563" size={12} />
-                </TouchableOpacity>
-                
-                <Text className="text-xs font-bold w-4 text-center">{quantities[item.id]}</Text>
-                
-                <TouchableOpacity 
-                  onPress={() => handleQuantityChange(item, 1)}
-                  disabled={quantities[item.id] >= item.stock}
-                  className={`w-6 h-6 rounded-full items-center justify-center shadow-sm ${quantities[item.id] >= item.stock ? "bg-gray-200" : "bg-[#90C659]"}`}
-                >
-                  <Plus color={quantities[item.id] >= item.stock ? "#9ca3af" : "white"} size={12} />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <ActionButton onPress={() => handleQuantityChange(item, 1)} text="Añadir" />
-            )}
-          </View>
-        </View>
-      </View>
+      <RestaurantMenuItemCard
+        key={item.id}
+        item={item}
+        quantity={quantities[item.id] || 0}
+        isSurprisePack={isSurprisePack}
+        isUpcoming={isUpcoming}
+        isExpired={isExpired}
+        isDangerous={isDangerous}
+        onDecrease={() => handleQuantityChange(item, -1)}
+        onIncrease={() => handleQuantityChange(item, 1)}
+      />
     );
   };
 
   return (
-    <View className="flex-1 bg-gray-50 flex-col relative">
-      
-      {/* HEADER */}
+    <View className="flex-1 bg-gray-50 flex-col relative">  
       <View className="bg-[#90C659] pt-12 pb-4 px-4 flex-row items-center justify-between shadow-md z-10">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full">
           <ArrowLeft color="white" size={24} />
@@ -319,29 +278,25 @@ export default function RestaurantMenuScreen() {
           <Text className="text-gray-500 mt-4 font-medium">Cargando menú...</Text>
         </View>
       ) : (
-        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 190 }}>
           
-          {packs.length > 0 && (
-            <View className="mb-2">
-              <View className="flex-row items-center gap-2 mb-4">
-                <Text className="text-lg">🎁</Text>
-                <Text className="font-bold text-lg text-gray-800">Packs Sorpresa</Text>
-              </View>
-              {packs.map((pack) => renderItemCard(pack, true))}
-            </View>
-          )}
+          <RestaurantMenuSection
+            title="Packs Sorpresa"
+            icon={<Text className="text-lg">🎁</Text>}
+            items={visiblePacks}
+            isSurprisePack={true}
+            renderItem={renderItemCard}
+          />
 
-          {platos.length > 0 && (
-            <View className="mt-4 mb-2">
-              <View className="flex-row items-center gap-2 mb-4">
-                <Text className="text-lg">🍽️</Text>
-                <Text className="font-bold text-lg text-gray-800">Platos para rescatar</Text>
-              </View>
-              {platos.map((plato) => renderItemCard(plato, false))}
-            </View>
-          )}
+          <RestaurantMenuSection
+            title="Platos para rescatar"
+            icon={<Text className="text-lg">🍽️</Text>}
+            items={visiblePlatos}
+            isSurprisePack={false}
+            renderItem={renderItemCard}
+          />
 
-          {packs.length === 0 && platos.length === 0 && (
+          {visiblePacks.length === 0 && visiblePlatos.length === 0 && (
             <View className="py-10 items-center justify-center">
               <Text className="text-gray-400 text-sm text-center">Este restaurante no cuenta con ofertas disponibles por el momento.</Text>
             </View>
@@ -350,25 +305,11 @@ export default function RestaurantMenuScreen() {
         </ScrollView>
       )}
 
-      {/* FOOTER FLOTANTE */}
-      <View className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-white shadow-lg pb-8">
-        <TouchableOpacity
-          onPress={handleProceedCheckout}
-          disabled={totalItems === 0}
-          className={`w-full py-4 rounded-xl flex-row items-center justify-between px-6 active:scale-95 ${
-            totalItems > 0 ? "bg-[#90C659] shadow-lg" : "bg-gray-200"
-          }`}
-        >
-          <Text className={`font-bold text-base ${totalItems > 0 ? "text-white" : "text-gray-400"}`}>
-            ♻️ Proceder al Rescate
-          </Text>
-          {totalItems > 0 && (
-            <View className="bg-white px-2 py-1 rounded-md">
-              <Text className="text-[#90C659] font-black text-sm">S/. {totalAmount.toFixed(2)}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+      <RestaurantCheckoutBar
+        totalItems={totalItems}
+        totalAmount={totalAmount}
+        onProceedCheckout={handleProceedCheckout}
+      />
       
     </View>
   );

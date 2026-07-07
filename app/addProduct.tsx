@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { addDoc, collection } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { AlertTriangle, ArrowLeft, Camera, Check, Gift, UtensilsCrossed } from 'lucide-react-native';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db, storage } from '../firebase';
 
@@ -13,7 +13,6 @@ const ALERGENOS_OPCIONES = ['gluten', 'lactosa', 'frutos secos', 'mariscos', 'hu
 export default function AddProductScreen() {
   const router = useRouter();
 
-  // 'pack' = packs_sopresa | 'plato' = platos_independientes
   const [productType, setProductType] = useState<'pack' | 'plato'>('plato');
 
   const [formData, setFormData] = useState({
@@ -22,7 +21,8 @@ export default function AddProductScreen() {
     precioOriginal: '',
     precioOferta: '',
     cantidadDisponible: '',
-    tiempoRestante: '',
+    horaInicio: '',
+    horaFin: ''
   });
 
   const [category, setCategory] = useState('');
@@ -69,7 +69,8 @@ export default function AddProductScreen() {
       precioOriginal: '',
       precioOferta: '',
       cantidadDisponible: '',
-      tiempoRestante: '',
+      horaInicio: '',
+      horaFin: ''
     });
     setCategory('');
     setAlergenos([]);
@@ -83,6 +84,7 @@ export default function AddProductScreen() {
       return 'El precio de oferta debe ser menor al precio original.';
     }
     if (!formData.cantidadDisponible) return 'Indica la cantidad disponible.';
+    if (!formData.horaInicio.trim() || !formData.horaFin.trim()) return 'Ingresa la hora de inicio y fin.';
     if (!category) return 'Selecciona una categoría.';
     return '';
   };
@@ -119,7 +121,8 @@ export default function AddProductScreen() {
         precioOriginal: Number(formData.precioOriginal),
         precioOferta: Number(formData.precioOferta),
         categoria: category,
-        tiempoRestante: formData.tiempoRestante.trim() || 'Pronto',
+        horaInicio: formData.horaInicio.trim(),
+        horaFin: formData.horaFin.trim(),
         cantidadDisponible: Number(formData.cantidadDisponible),
         imagenUrl,
         alergenos,
@@ -142,7 +145,6 @@ export default function AddProductScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
 
-      {/* HEADER */}
       <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md z-10">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full">
           <ArrowLeft color="white" size={24} />
@@ -257,9 +259,10 @@ export default function AddProductScreen() {
             </View>
           </View>
 
+          {/* LA NUEVA FILA DE STOCK Y HORARIOS EXACTOS */}
           <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Text className="font-bold text-xs text-gray-700 mb-1">Stock disponible</Text>
+            <View className="w-1/3">
+              <Text className="font-bold text-xs text-gray-700 mb-1">Stock</Text>
               <TextInput
                 placeholder="Ej. 5"
                 value={formData.cantidadDisponible}
@@ -268,13 +271,24 @@ export default function AddProductScreen() {
                 className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
               />
             </View>
-            <View className="flex-1">
-              <Text className="font-bold text-xs text-gray-700 mb-1">Tiempo restante</Text>
+            <View className="w-1/3">
+              <Text className="font-bold text-[11px] text-gray-700 mb-1">Inicia (24h)</Text>
               <TextInput
-                placeholder="Ej. 2 horas"
-                value={formData.tiempoRestante}
-                onChangeText={(t) => setFormData({ ...formData, tiempoRestante: t })}
+                placeholder="Ej. 14:00"
+                value={formData.horaInicio}
+                onChangeText={(t) => setFormData({ ...formData, horaInicio: t })}
                 className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
+                maxLength={5}
+              />
+            </View>
+            <View className="w-1/3">
+              <Text className="font-bold text-[11px] text-gray-700 mb-1">Termina (24h)</Text>
+              <TextInput
+                placeholder="Ej. 18:30"
+                value={formData.horaFin}
+                onChangeText={(t) => setFormData({ ...formData, horaFin: t })}
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
+                maxLength={5}
               />
             </View>
           </View>

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'; // <-- AÑADIDO updateDoc
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'; 
 import { Award, Check, ChevronRight, Clock, Coins, Leaf, LogOut, Package, Settings, ShieldCheck, ShoppingBag, Wallet, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -13,7 +13,7 @@ export function profileUser() {
 
   const [userData, setUserData] = useState<any>(null);
   const [metrics, setMetrics] = useState({ packs: 0, ahorro: 0, co2: 0 });
-  const [orderHistory, setOrderHistory] = useState<any[]>([]); // <-- NUEVO: Guarda el historial
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);

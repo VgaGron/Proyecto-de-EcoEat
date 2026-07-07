@@ -1,11 +1,12 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { Camera as CameraIcon, Clock, Coins, Leaf, LogOut, Package, Plus, QrCode, ShoppingBag, UtensilsCrossed, X } from 'lucide-react-native';
+import { Camera as CameraIcon, Clock, Coins, Home, Leaf, Package, QrCode, ShoppingBag, User, UtensilsCrossed, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-
+import { dishesTab as DishesTab } from '../components/dishesTab';
+import { ProfileRestaurant } from '../components/profileRestaurant';
 import { auth, db } from '../firebase';
 
 const parseTimeToSeconds = (timeStr: string): number => {
@@ -50,21 +51,14 @@ function CountdownTimer({ timeStr }: { timeStr: string }) {
 export default function DashboardRestaurantScreen() {
   const router = useRouter();
 
+  const [activeTab, setActiveTab] = useState('home'); 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  
   const [restaurantName, setRestaurantName] = useState('Tu Restaurante');
-  const [packs, setPacks] = useState<any[]>([]);
-  const [platos, setPlatos] = useState<any[]>([]);
   const [pendingOrdersList, setPendingOrdersList] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({ packs: 0, platos: 0, ahorro: '0.00', co2: '0.0' });
   const [loading, setLoading] = useState(true);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [editPrecioOferta, setEditPrecioOferta] = useState('');
-  const [editPrecioOriginal, setEditPrecioOriginal] = useState('');
-  const [editStock, setEditStock] = useState('');
-  const [editTiempo, setEditTiempo] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   const chartData = {
@@ -95,16 +89,8 @@ export default function DashboardRestaurantScreen() {
       const restSnap = await getDoc(restRef);
       if (restSnap.exists()) setRestaurantName(restSnap.data().nombre || 'Tu Restaurante');
 
-      const qPacks = query(collection(db, 'packs_sopresa'), where('restauranteId', '==', uid));
-      const qPlatos = query(collection(db, 'platos_independientes'), where('restauranteId', '==', uid));
       const qTodosPedidos = query(collection(db, 'pedidos'), where('restauranteId', '==', uid));
-
-      const [packsSnap, platosSnap, pedidosSnap] = await Promise.all([
-        getDocs(qPacks), getDocs(qPlatos), getDocs(qTodosPedidos),
-      ]);
-
-      setPacks(packsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setPlatos(platosSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const pedidosSnap = await getDocs(qTodosPedidos);
 
       let packsVendidos = 0; let platosVendidos = 0; let ingresosRecuperados = 0;
       let pedidosPendientesReales: any[] = [];
@@ -131,7 +117,7 @@ export default function DashboardRestaurantScreen() {
       setPendingOrdersList(pedidosPendientesReales); 
 
     } catch (error) {
-      console.error('Error al cargar:', error);
+      console.error('Error al cargar dashboard:', error);
     } finally {
       setLoading(false);
     }
@@ -179,117 +165,134 @@ export default function DashboardRestaurantScreen() {
     setIsQRScannerOpen(true);
   };
 
-  const handleLogout = () => {};
-  const openEditModal = (item: any) => { /* igual */ };
-  const handleSaveEdit = async () => { /* igual */ };
-
-  const allProducts = [...packs.map((p) => ({ ...p, tipo: 'Pack Sorpresa' })), ...platos.map((p) => ({ ...p, tipo: 'Plato' }))];
-
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
-      <View className="bg-[#90C659] px-6 pt-16 pb-8 rounded-b-[40px] shadow-lg shadow-[#90C659]/30 shrink-0 relative z-10">
-        <View className="flex-row justify-between items-center mb-6">
-          <View>
-            <Text className="text-2xl font-black text-white tracking-tight">Hola, {restaurantName}</Text>
-            <Text className="text-white/90 font-medium text-sm mt-1">Tu resumen general ✨</Text>
-          </View>
-          <TouchableOpacity onPress={handleLogout} className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
-            <LogOut color="white" size={20} />
-          </TouchableOpacity>
-        </View>
+      
+      {/* PESTAÑA 1: INICIO (DASHBOARD) */}
+      {activeTab === 'home' && (
+        <View className="flex-1">
+          <View className="bg-[#90C659] px-6 pt-16 pb-8 rounded-b-[40px] shadow-lg shadow-[#90C659]/30 shrink-0 relative z-10">
+            <View className="flex-row justify-between items-center mb-6">
+              <View>
+                <Text className="text-2xl font-black text-white tracking-tight">Hola, {restaurantName}</Text>
+                <Text className="text-white/90 font-medium text-sm mt-1">Tu resumen general ✨</Text>
+              </View>
+            </View>
 
-        <View className="flex-row flex-wrap justify-between gap-y-3">
-          <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
-            <View className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center mb-2">
-              <Package color="#3b82f6" size={16} />
+            <View className="flex-row flex-wrap justify-between gap-y-3">
+              <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
+                <View className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center mb-2">
+                  <Package color="#3b82f6" size={16} />
+                </View>
+                <Text className="text-2xl font-black text-gray-800 leading-none">{metrics.packs}</Text>
+                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Packs</Text>
+              </View>
+              <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
+                <View className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center mb-2">
+                  <UtensilsCrossed color="#a855f7" size={16} />
+                </View>
+                <Text className="text-2xl font-black text-gray-800 leading-none">{metrics.platos}</Text>
+                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Platos</Text>
+              </View>
+              <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-md border-2 border-[#90C659]/10">
+                <View className="w-8 h-8 bg-[#90C659] rounded-full flex items-center justify-center mb-2 shadow-inner">
+                  <Coins color="white" size={16} />
+                </View>
+                <Text className="text-xl font-black text-[#90C659] leading-none text-center">S/ {metrics.ahorro}</Text>
+                <Text className="text-[10px] font-bold text-green-600/70 uppercase tracking-wider mt-1">Recuperado</Text>
+              </View>
+              <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
+                <View className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center mb-2">
+                  <Leaf color="#14b8a6" size={16} />
+                </View>
+                <Text className="text-xl font-black text-gray-800 leading-none">{metrics.co2}kg</Text>
+                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">CO2</Text>
+              </View>
             </View>
-            <Text className="text-2xl font-black text-gray-800 leading-none">{metrics.packs}</Text>
-            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Packs</Text>
           </View>
-          <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
-            <View className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center mb-2">
-              <UtensilsCrossed color="#a855f7" size={16} />
+
+          <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+            <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
+              <Text className="text-gray-800 font-bold mb-4 text-base">Ahorro semanal</Text>
+              <View className="items-center -ml-4">
+                <LineChart
+                  data={chartData} width={Dimensions.get('window').width - 60} height={180}
+                  chartConfig={chartConfig} bezier withVerticalLines={false} withShadow={false}
+                  style={{ borderRadius: 16 }}
+                />
+              </View>
             </View>
-            <Text className="text-2xl font-black text-gray-800 leading-none">{metrics.platos}</Text>
-            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Platos</Text>
-          </View>
-          <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-md border-2 border-[#90C659]/10">
-            <View className="w-8 h-8 bg-[#90C659] rounded-full flex items-center justify-center mb-2 shadow-inner">
-              <Coins color="white" size={16} />
+
+            <View className="mb-8">
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-gray-800 font-bold text-lg">Pedidos Pendientes</Text>
+                <View className="bg-orange-100 px-2 py-1 rounded-lg">
+                  <Text className="text-orange-600 text-xs font-bold">{pendingOrdersList.length} por entregar</Text>
+                </View>
+              </View>
+
+              {pendingOrdersList.length === 0 ? (
+                 <Text className="text-gray-400 italic mb-4">No tienes pedidos pendientes de entrega.</Text>
+              ) : (
+                <View className="flex-col gap-3">
+                  {pendingOrdersList.map(order => {
+                    const itemsCount = order.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+                    
+                    return (
+                      <View key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-3 flex-1">
+                          <View className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
+                            <ShoppingBag color="#ea580c" size={20} />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="font-bold text-gray-800 text-sm">Cod: {order.id.substring(0, 5).toUpperCase()}</Text>
+                            <View className="flex-row items-center gap-1.5 mt-1 flex-wrap pr-2">
+                              <Clock color="#6b7280" size={12} />
+                              <Text className="text-gray-500 text-[11px]">{order.horario}</Text>
+                              <Text className="text-gray-300 text-xs">•</Text>
+                              <Text className="text-gray-500 text-[11px]">{itemsCount} art(s)</Text>
+                            </View>
+                          </View>
+                        </View>
+                        
+                        <TouchableOpacity 
+                          onPress={openScanner}
+                          className="w-12 h-12 bg-[#90C659] rounded-xl flex items-center justify-center shadow-sm"
+                        >
+                          <QrCode color="white" size={22} />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
-            <Text className="text-xl font-black text-[#90C659] leading-none text-center">S/ {metrics.ahorro}</Text>
-            <Text className="text-[10px] font-bold text-green-600/70 uppercase tracking-wider mt-1">Recuperado</Text>
-          </View>
-          <View className="w-[48%] bg-white rounded-3xl p-4 flex-col items-center justify-center shadow-sm">
-            <View className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center mb-2">
-              <Leaf color="#14b8a6" size={16} />
-            </View>
-            <Text className="text-xl font-black text-gray-800 leading-none">{metrics.co2}kg</Text>
-            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">CO2</Text>
-          </View>
+          </ScrollView>
         </View>
+      )}
+
+      {activeTab === 'dishes' && <DishesTab />}
+
+      {activeTab === 'profile' && <ProfileRestaurant />}
+
+      <View className="bg-white border-t border-gray-100 flex-row items-center justify-around py-3 shadow-lg shrink-0 z-20">
+        <TouchableOpacity onPress={() => setActiveTab('home')} className="items-center gap-1">
+          <Home color={activeTab === 'home' ? "#90C659" : "#9ca3af"} size={24} />
+          <Text className={`text-[10px] font-bold ${activeTab === 'home' ? 'text-[#90C659]' : 'text-gray-400'}`}>Inicio</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => setActiveTab('dishes')} className="items-center gap-1">
+          <UtensilsCrossed color={activeTab === 'dishes' ? "#90C659" : "#9ca3af"} size={24} />
+          <Text className={`text-[10px] font-bold ${activeTab === 'dishes' ? 'text-[#90C659]' : 'text-gray-400'}`}>Mis Platos</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => setActiveTab('profile')} className="items-center gap-1">
+          <User color={activeTab === 'profile' ? "#90C659" : "#9ca3af"} size={24} />
+          <Text className={`text-[10px] font-bold ${activeTab === 'profile' ? 'text-[#90C659]' : 'text-gray-400'}`}>Perfil</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        
-        <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
-          <Text className="text-gray-800 font-bold mb-4 text-base">Ahorro semanal</Text>
-          <View className="items-center -ml-4">
-            <LineChart
-              data={chartData} width={Dimensions.get('window').width - 60} height={180}
-              chartConfig={chartConfig} bezier withVerticalLines={false} withShadow={false}
-              style={{ borderRadius: 16 }}
-            />
-          </View>
-        </View>
-
-        <View className="mb-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-gray-800 font-bold text-lg">Pedidos Pendientes</Text>
-            <View className="bg-orange-100 px-2 py-1 rounded-lg">
-              <Text className="text-orange-600 text-xs font-bold">{pendingOrdersList.length} por entregar</Text>
-            </View>
-          </View>
-
-          {pendingOrdersList.length === 0 ? (
-             <Text className="text-gray-400 italic mb-4">No tienes pedidos pendientes de entrega.</Text>
-          ) : (
-            <View className="flex-col gap-3">
-              {pendingOrdersList.map(order => {
-                const itemsCount = order.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-                
-                return (
-                  <View key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-3 flex-1">
-                      <View className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
-                        <ShoppingBag color="#ea580c" size={20} />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="font-bold text-gray-800 text-sm">Cod: {order.id.substring(0, 5).toUpperCase()}</Text>
-                        <View className="flex-row items-center gap-1.5 mt-1 flex-wrap pr-2">
-                          <Clock color="#6b7280" size={12} />
-                          <Text className="text-gray-500 text-[11px]">{order.horario}</Text>
-                          <Text className="text-gray-300 text-xs">•</Text>
-                          <Text className="text-gray-500 text-[11px]">{itemsCount} art(s)</Text>
-                        </View>
-                      </View>
-                    </View>
-                    
-                    <TouchableOpacity 
-                      onPress={openScanner}
-                      className="w-12 h-12 bg-[#90C659] rounded-xl flex items-center justify-center shadow-sm"
-                    >
-                      <QrCode color="white" size={22} />
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
-
-      </ScrollView>
-
+      {/* MODAL DEL ESCÁNER DE CÁMARA (Se queda aquí porque es global para los pedidos) */}
       <Modal visible={isQRScannerOpen} transparent animationType="slide">
          <View className="flex-1 bg-black">
            <View className="p-6 flex-row justify-between items-center pt-16 relative z-50">
@@ -334,15 +337,7 @@ export default function DashboardRestaurantScreen() {
            </View>
          </View>
       </Modal>
-      <View className="absolute bottom-8 w-full px-6 items-center pointer-events-box-none z-20">
-        <TouchableOpacity 
-          onPress={() => router.push('/addProduct')}
-          className="bg-[#90C659] flex-row items-center justify-center gap-2 px-8 py-4 rounded-full shadow-lg shadow-[#90C659]/40 w-full active:scale-95 transition-transform pointer-events-auto"
-        >
-          <Plus color="white" size={24} />
-          <Text className="text-white font-bold text-lg">Publicar Excedentes</Text>
-        </TouchableOpacity>
-      </View>
+      
     </View>
   );
 }

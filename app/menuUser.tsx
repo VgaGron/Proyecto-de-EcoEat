@@ -1,14 +1,31 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+
 import { UrgentOffers } from '../components/UrgentOffers';
 import { favoriteTab as FavoriteTab } from '../components/favoriteTab'; 
 import { profileUser as ProfileUser } from '../components/profileUser'; 
 
 import { db } from '../firebase';
+
+const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
+  if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
+  const date = new Date(fechaCreacion);
+  if (isNaN(date.getTime())) return null;
+  const [h, m] = horaStr.split(':').map(Number);
+  date.setHours(h, m, 0, 0);
+  return date;
+};
+
+const formatTimeLeft = (minutes: number) => {
+  const h = Math.floor(minutes / 60);
+  const m = Math.floor(minutes % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
 
 export default function MainMenuScreen() {
   const router = useRouter();
@@ -16,33 +33,108 @@ export default function MainMenuScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   
   const [restaurantsData, setRestaurantsData] = useState<any[]>([]);
+  const [urgentOffersList, setUrgentOffersList] = useState<any[]>([]);
+  const [upcomingOffersList, setUpcomingOffersList] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const fetchRestaurants = async () => {
+  const fetchRestaurantsAndOffers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const q = query(collection(db, "restaurantes"), where("activo", "==", true));
-      const querySnapshot = await getDocs(q);
 
-      const fetchedRestaurants = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const qRest = query(collection(db, "restaurantes"), where("activo", "==", true));
+      const [restSnap, packsSnap, platosSnap] = await Promise.all([
+        getDocs(qRest),
+        getDocs(collection(db, "packs_sopresa")),
+        getDocs(collection(db, "platos_independientes"))
+      ]);
+
+      const restaurantesDict: Record<string, any> = {};
+      const fetchedRestaurants = restSnap.docs.map((doc) => {
+        const data = doc.data();
+        restaurantesDict[doc.id] = data;
+        return { id: doc.id, ...data };
+      });
+
+      const now = new Date();
+      const urgentMap = new Map();
+      const upcomingMap = new Map();
+
+      const processOffers = (snap: any) => {
+        snap.docs.forEach((docSnap: any) => {
+          const data = docSnap.data();
+          if (!data.restauranteId || !restaurantesDict[data.restauranteId]) return;
+
+          const startDate = getAbsoluteDate(data.fecha_creacion, data.horaInicio);
+          const expDate = getAbsoluteDate(data.fecha_creacion, data.horaFin);
+
+          if (!startDate || !expDate || now > expDate) return;
+
+          const restInfo = restaurantesDict[data.restauranteId];
+
+          if (now < startDate) {
+            if (!upcomingMap.has(data.restauranteId)) {
+              upcomingMap.set(data.restauranteId, {
+                restauranteId: data.restauranteId,
+                restaurantName: restInfo.nombre,
+                startTime: data.horaInicio,
+                minStartTime: startDate.getTime()
+              });
+            } else {
+              const existing = upcomingMap.get(data.restauranteId);
+              if (startDate.getTime() < existing.minStartTime) {
+                existing.minStartTime = startDate.getTime();
+                existing.startTime = data.horaInicio;
+              }
+            }
+          } 
+          else if (now >= startDate && now <= expDate) {
+            const leftMins = (expDate.getTime() - now.getTime()) / 60000;
+            if (leftMins <= 120) { 
+              if (!urgentMap.has(data.restauranteId)) {
+                urgentMap.set(data.restauranteId, {
+                  id: data.restauranteId,
+                  name: restInfo.nombre,
+                  image: restInfo.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
+                  timeLeft: formatTimeLeft(leftMins),
+                  offerCount: 0,
+                  minEndMins: expDate.getTime()
+                });
+              }
+              const existing = urgentMap.get(data.restauranteId);
+              existing.offerCount += (Number(data.cantidadDisponible) || 1);
+              
+              if (expDate.getTime() < existing.minEndMins) {
+                existing.minEndMins = expDate.getTime();
+                existing.timeLeft = formatTimeLeft(leftMins);
+              }
+            }
+          }
+        });
+      };
+
+      processOffers(packsSnap);
+      processOffers(platosSnap);
+
+      const finalUrgent = Array.from(urgentMap.values());
+      const finalUpcoming = Array.from(upcomingMap.values()).sort((a, b) => a.minStartTime - b.minStartTime);
+
+      setUrgentOffersList(finalUrgent);
+      setUpcomingOffersList(finalUpcoming);
       setRestaurantsData(fetchedRestaurants);
+
     } catch (err) {
-      console.error("Error al traer al restaurante", err);
-      setError("Error al cargar los restaurantes. Revisa tu conexión.");
+      console.error("Error al traer datos", err);
+      setError("Error al cargar los restaurantes y ofertas. Revisa tu conexión.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchRestaurants();
-  }, []);
+  useFocusEffect(useCallback(() => { fetchRestaurantsAndOffers(); }, []));
 
   const foodCategories = [
     { id: 'all', name: 'Todos', icon: '🍽️' },
@@ -63,39 +155,9 @@ export default function MainMenuScreen() {
     ? restaurantsData
     : restaurantsData.filter(r => r.categoriaId === selectedCategory);
 
-  const urgentOffersList = restaurantsData
-    .filter(r => r.urgente === true)
-    .map(r => ({
-      id: r.id,
-      name: r.nombre,
-      image: r.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
-      timeLeft: '30',
-      offerCount: 3
-    }));
-
-  const upcomingOffersList = restaurantsData
-    .filter(r => r.proximaOferta === true)
-    .map(r => ({
-      startTime: r.proximaOfertaHora || '18:00',
-      restaurantName: r.nombre
-    }));
-
-  const dummyPositions: { top: `${number}%`; left: `${number}%` }[] = [
-    { top: '15%', left: '35%' }, { top: '25%', left: '20%' },
-    { top: '40%', left: '15%' }, { top: '50%', left: '50%' },
-  ];
-
-  const dynamicMapMarkers = filteredRestaurants.slice(0,4).map((r, index) => ({
-    id: r.id,
-    name: r.nombre,
-    top: dummyPositions[index % 4].top,
-    left: dummyPositions[index % 4].left
-  })); 
-
   return (
     <View className="flex-1 bg-gray-50 flex-col">
       
-      {/* MENÚ LATERAL (DRAWER) */}
       {isMenuOpen && (
         <View className="absolute inset-0 z-50 flex-row" style={StyleSheet.absoluteFill}>
           <TouchableOpacity 
@@ -151,49 +213,43 @@ export default function MainMenuScreen() {
           </View>
 
           <View style={{ height: 200, width: '100%' }}>
-  <MapView
-    style={{ flex: 1 }}
-    provider="google"
-    initialRegion={{
-      latitude: -9.0853,
-      longitude: -78.5782,
-      latitudeDelta: 0.05,
-      longitudeDelta: 0.05,
-    }}
-    showsUserLocation={true}
-  >
-    {filteredRestaurants.map((restaurant) => {
-      const coords = restaurant.ubicacion?.coordenadas;
-      if (!coords) return null;
-      return (
-        <Marker
-          key={restaurant.id}
-          coordinate={{
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-          }}
-          title={restaurant.nombre}
-          pinColor="#90C659"
-          onPress={() => router.push({
-            pathname: '/RestaurantMenu',
-            params: { id: String(restaurant.id) },
-          })}
-        />
-      );
-    })}
-  </MapView>
-</View>
+            <MapView
+              style={{ flex: 1 }}
+              provider="google"
+              initialRegion={{
+                latitude: -9.0853,
+                longitude: -78.5782,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }}
+              showsUserLocation={true}
+            >
+              {filteredRestaurants.map((restaurant) => {
+                const coords = restaurant.ubicacion?.coordenadas;
+                if (!coords) return null;
+                return (
+                  <Marker
+                    key={restaurant.id}
+                    coordinate={{ latitude: coords.latitude, longitude: coords.longitude }}
+                    title={restaurant.nombre}
+                    pinColor="#90C659"
+                    onPress={() => router.push({ pathname: '/RestaurantMenu', params: { id: String(restaurant.id) } })}
+                  />
+                );
+              })}
+            </MapView>
+          </View>
 
           {loading ? (
             <View className="flex-1 items-center justify-center bg-gray-50">
               <ActivityIndicator size="large" color="#90C659" />
-              <Text className="text-gray-500 font-medium mt-4">Buscando locales cercanos...</Text>
+              <Text className="text-gray-500 font-medium mt-4">Calculando ofertas en tiempo real...</Text>
             </View>
           ) : error ? (
             <View className="flex-1 items-center justify-center bg-gray-50 p-6">
               <AlertTriangle color="#f87171" size={48} className="mb-4" />
               <Text className="text-gray-600 font-medium text-center">{error}</Text>
-              <TouchableOpacity onPress={fetchRestaurants} className="mt-4">
+              <TouchableOpacity onPress={fetchRestaurantsAndOffers} className="mt-4">
                 <Text className="text-[#90C659] font-bold">Reintentar</Text>
               </TouchableOpacity>
             </View>
@@ -216,9 +272,7 @@ export default function MainMenuScreen() {
               {urgentOffersList.length > 0 && (
                 <UrgentOffers 
                   restaurants={urgentOffersList} 
-                  onRestaurantClick={(idRestaurante) => {
-                  router.push(`/RestaurantMenu?id=${idRestaurante}`)
-                  }} 
+                  onRestaurantClick={(idRestaurante) => { router.push(`/RestaurantMenu?id=${idRestaurante}`) }} 
                 />
               )}
 
@@ -230,11 +284,15 @@ export default function MainMenuScreen() {
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4" contentContainerStyle={{ gap: 12 }}>
                     {upcomingOffersList.map((offer, index) => (
-                      <View key={index} className="w-[150px] bg-white border border-gray-200 rounded-xl p-3 shadow-sm mr-2">
+                      <TouchableOpacity 
+                        key={index} 
+                        onPress={() => router.push(`/RestaurantMenu?id=${offer.restauranteId}`)}
+                        className="w-[150px] bg-white border border-gray-200 rounded-xl p-3 shadow-sm mr-2"
+                      >
                         <Text className="text-xs text-gray-500 font-medium mb-1">Disponible a las:</Text>
                         <Text className="font-bold text-[#90C659] text-lg mb-1">{offer.startTime}</Text>
                         <Text className="text-sm font-bold text-gray-800" numberOfLines={1}>{offer.restaurantName}</Text>
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </ScrollView>
                 </View>
@@ -243,7 +301,7 @@ export default function MainMenuScreen() {
               <View className="px-4 pb-10">
                 <View className="flex-row items-center gap-2 mb-4">
                   <Text className="text-lg">🍴</Text>
-                  <Text className="font-bold text-lg text-gray-800">Restaurantes Cercanos</Text>
+                  <Text className="font-bold text-lg text-gray-800">Directorio de Restaurantes</Text>
                 </View>
 
                 {filteredRestaurants.length === 0 ? (
@@ -253,13 +311,8 @@ export default function MainMenuScreen() {
                     {filteredRestaurants.map((restaurant) => (
                       <TouchableOpacity 
                         key={restaurant.id} 
-                        onPress={() => {
-                          router.push({
-                            pathname: '/RestaurantMenu',
-                            params: { id: String(restaurant.id) },
-                          });
-                        }}
-                    className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+                        onPress={() => { router.push({ pathname: '/RestaurantMenu', params: { id: String(restaurant.id) } }); }}
+                        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
                       >
                         <View className="h-32 bg-gray-200 relative">
                           <Image source={{ uri: restaurant.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }} className="w-full h-full" resizeMode="cover" />

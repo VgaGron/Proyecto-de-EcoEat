@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-// --- IMPORTS DE FIREBASE ---
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -13,7 +12,6 @@ export default function RegisterUserScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
 
-  // --- ESTADOS ---
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

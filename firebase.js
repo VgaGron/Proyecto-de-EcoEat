@@ -1,11 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-// Herramientas exclusivas para que funcione en celulares (Expo / React Native)
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getReactNativePersistence, initializeAuth } from "firebase/auth";
 
-// Mantén AQUÍ tus mismas llaves del proyecto anterior (no cambian)
 const firebaseConfig = {
   apiKey: "AIzaSyC7bA1EKynktAPqSkGENag0SFpVtaEOJMI",
   authDomain: "ecoeat-3a228.firebaseapp.com",

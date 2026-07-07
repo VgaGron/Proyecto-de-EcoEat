@@ -20,7 +20,7 @@ export default function RestaurantRegisterScreen() {
 
   const categories = ['Panadería', 'Menú', 'Comida Rápida', 'Postres', 'Cafetería'];
   const [coordenadas, setCoordenadas] = useState<GeoPoint | null>(null);
-  const [profileImage, setProfileImage] = useState<DocumentPicker.DocumentPickerAsset | null>(null); // NUEVA FOTO DE PERFIL
+  const [profileImage, setProfileImage] = useState<DocumentPicker.DocumentPickerAsset | null>(null); 
   const [licenciaFile, setLicenciaFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [sanidadFile, setSanidadFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   

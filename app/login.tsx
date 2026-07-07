@@ -19,7 +19,6 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Estados para verificación OTP
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -65,7 +64,6 @@ export default function LoginScreen() {
         const userData = profileSnap.data();
 
         if (userData.rol === 'restaurante') {
-          // Cerrar sesión temporalmente hasta verificar OTP
           await signOut(auth);
 
           const code = generateCode();
@@ -123,7 +121,6 @@ export default function LoginScreen() {
 
     try {
       setIsLoading(true);
-      // Volvemos a iniciar sesión ahora que el OTP es correcto
       await signInWithEmailAndPassword(auth, pendingUserData.email, pendingUserData.password);
       router.replace('/dashboardRestaurant');
     } catch (error) {
@@ -133,7 +130,6 @@ export default function LoginScreen() {
     }
   };
 
-  // PANTALLA OTP
   if (showOtp) {
     return (
       <View className="flex-1 bg-gray-50 items-center justify-center p-6">
@@ -191,7 +187,6 @@ export default function LoginScreen() {
     );
   }
 
-  // PANTALLA LOGIN NORMAL
   return (
     <View className="flex-1 bg-gray-50 flex-col items-center justify-center p-6 relative">
 

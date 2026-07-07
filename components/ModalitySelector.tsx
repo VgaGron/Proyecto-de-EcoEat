@@ -48,7 +48,7 @@ export const ModalitySelector = ({
               key={index} 
               onPress={() => {
                 onChange(time);
-                setIsOpen(false); // Cierra el menú al seleccionar
+                setIsOpen(false); 
               }}
               className={`px-4 py-4 border-b border-gray-50 flex-row items-center justify-between ${value === time ? 'bg-green-50' : 'bg-white'}`}
             >

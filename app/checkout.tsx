@@ -10,13 +10,11 @@ import { collection, addDoc, doc, updateDoc, increment } from 'firebase/firestor
 export default function CheckoutScreen() {
   const router = useRouter();
   
-  // Recibimos los datos incluyendo el restaurantId
   const { cartStr, total, restaurantId } = useLocalSearchParams();
   
   const cartItems = typeof cartStr === 'string' ? JSON.parse(cartStr) : [];
   const initialTotal = typeof total === 'string' ? parseFloat(total) : 0;
 
-  // ESTADOS
   const [selectedModality, setSelectedModality] = useState('tienda');
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [ownContainer, setOwnContainer] = useState(false);
@@ -24,8 +22,7 @@ export default function CheckoutScreen() {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   
   const [isProcessing, setIsProcessing] = useState(false);
-  const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null); // Guardará el ID del ticket
-
+  const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null);  
   const paymentSteps = [
     { text: "Conectando con tu método de pago...", icon: <CreditCard color="white" size={32} /> },
     { text: "Procesando transacción segura...", icon: <ShieldCheck color="white" size={32} /> },
