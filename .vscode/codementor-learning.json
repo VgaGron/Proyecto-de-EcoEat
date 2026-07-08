@@ -1,45 +1,45 @@
 {
   "ASYNC-001": {
-    "occurrences": 2946,
+    "occurrences": 3137,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T14:52:17.383Z",
-    "last_seen": "2026-07-08T00:02:43.276Z"
+    "last_seen": "2026-07-08T18:27:07.859Z"
   },
   "CC-004": {
-    "occurrences": 2315,
+    "occurrences": 2491,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T14:52:17.385Z",
-    "last_seen": "2026-07-08T00:02:47.443Z"
+    "last_seen": "2026-07-08T18:32:01.675Z"
   },
   "JS-002": {
-    "occurrences": 1253,
+    "occurrences": 1290,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.329Z",
-    "last_seen": "2026-07-08T00:02:43.252Z"
+    "last_seen": "2026-07-08T18:27:07.837Z"
   },
   "CC-003": {
-    "occurrences": 111,
+    "occurrences": 112,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.331Z",
-    "last_seen": "2026-07-07T18:22:22.850Z"
+    "last_seen": "2026-07-08T17:02:50.250Z"
   },
   "REACT-003": {
-    "occurrences": 1100,
+    "occurrences": 1123,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.332Z",
-    "last_seen": "2026-07-08T00:02:43.253Z"
+    "last_seen": "2026-07-08T18:27:03.655Z"
   },
   "JS-001": {
-    "occurrences": 1121,
+    "occurrences": 1154,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.334Z",
-    "last_seen": "2026-07-08T00:02:43.288Z"
+    "last_seen": "2026-07-08T18:27:07.873Z"
   },
   "PERF-001": {
     "occurrences": 10,
@@ -49,11 +49,11 @@
     "last_seen": "2026-07-07T18:20:08.724Z"
   },
   "CC-001": {
-    "occurrences": 362,
+    "occurrences": 392,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-07-01T18:22:22.872Z",
-    "last_seen": "2026-07-08T00:02:43.289Z"
+    "last_seen": "2026-07-08T18:27:07.874Z"
   },
   "SEC-002": {
     "occurrences": 3,

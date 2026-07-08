@@ -49,7 +49,6 @@ export function RestaurantMenuItemCard({
       <View className="w-1/3 bg-gray-100 relative">
         <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
         
-        {/* BADGES (ETIQUETAS) VISUALES */}
         {isUpcoming ? (
           <View className="absolute top-0 left-0 w-full bg-blue-500 py-1 items-center z-10">
             <Text className="text-white text-[9px] font-black tracking-widest">PRÓXIMAMENTE</Text>

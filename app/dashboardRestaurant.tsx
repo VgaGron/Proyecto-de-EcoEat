@@ -3,8 +3,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { Camera as CameraIcon, Clock, Coins, Home, Leaf, Package, QrCode, ShoppingBag, User, UtensilsCrossed, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
+import { ExitAppAlert } from '../components/ExitAppAlert';
 import { dishesTab as DishesTab } from '../components/dishesTab';
 import { ProfileRestaurant } from '../components/profileRestaurant';
 import { auth, db } from '../firebase';
@@ -60,6 +61,7 @@ export default function DashboardRestaurantScreen() {
   const [metrics, setMetrics] = useState({ packs: 0, platos: 0, ahorro: '0.00', co2: '0.0' });
   const [loading, setLoading] = useState(true);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [showExitAlert, setShowExitAlert] = useState(false);
 
   const chartData = {
     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
@@ -124,6 +126,40 @@ export default function DashboardRestaurantScreen() {
   };
 
   useFocusEffect(useCallback(() => { fetchDashboardData(); }, []));
+
+  useFocusEffect(
+    useCallback(() => {
+      setShowExitAlert(false);
+      return () => setShowExitAlert(false);
+    }, [])
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        setShowExitAlert(false);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (isQRScannerOpen) {
+          setIsQRScannerOpen(false);
+          return true;
+        }
+
+        setShowExitAlert(true);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [isQRScannerOpen])
+  );
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     setScanned(true); 
@@ -337,6 +373,12 @@ export default function DashboardRestaurantScreen() {
            </View>
          </View>
       </Modal>
+
+      <ExitAppAlert
+        visible={showExitAlert}
+        onCancel={() => setShowExitAlert(false)}
+        onConfirm={() => BackHandler.exitApp()}
+      />
       
     </View>
   );

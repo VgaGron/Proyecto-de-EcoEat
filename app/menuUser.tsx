@@ -1,10 +1,10 @@
 import { useRouter, useFocusEffect } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
-import React, { useState, useCallback } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { ActivityIndicator, AppState, BackHandler, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-
+import { ExitAppAlert } from '../components/ExitAppAlert';
 import { UrgentOffers } from '../components/UrgentOffers';
 import { DiscountOffers } from '../components/DiscountOffers';
 import { favoriteTab as FavoriteTab } from '../components/favoriteTab'; 
@@ -41,6 +41,7 @@ export default function MainMenuScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showExitAlert, setShowExitAlert] = useState(false);
 
   const fetchRestaurantsAndOffers = async () => {
     try {
@@ -154,6 +155,40 @@ export default function MainMenuScreen() {
 
   useFocusEffect(useCallback(() => { fetchRestaurantsAndOffers(); }, []));
 
+  useFocusEffect(
+    useCallback(() => {
+      setShowExitAlert(false);
+      return () => setShowExitAlert(false);
+    }, [])
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        setShowExitAlert(false);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+          return true;
+        }
+
+        setShowExitAlert(true);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [isMenuOpen])
+  );
+
   const foodCategories = [
     { id: 'all', name: 'Todos', icon: '🍽️' },
     { id: 'bakery', name: 'Panadería', icon: '🥐' },
@@ -186,7 +221,6 @@ export default function MainMenuScreen() {
           <View className="w-72 h-full bg-white flex-col shadow-2xl">
             <View className="bg-[#90C659] p-5 pt-12 flex-row items-center justify-between">
               <View>
-                <Text className="text-xl font-black tracking-wide text-white">ECOEAT</Text>
                 <Text className="text-white/90 text-xs font-medium">Opciones extra 🌱</Text>
               </View>
               <TouchableOpacity onPress={() => setIsMenuOpen(false)} className="p-2">
@@ -212,6 +246,12 @@ export default function MainMenuScreen() {
         </View>
       )}
 
+      <ExitAppAlert
+        visible={showExitAlert}
+        onCancel={() => setShowExitAlert(false)}
+        onConfirm={() => BackHandler.exitApp()}
+      />
+
       {activeTab === 'home' && (
         <View className="flex-1 flex-col overflow-hidden">
           
@@ -219,7 +259,7 @@ export default function MainMenuScreen() {
             <TouchableOpacity onPress={() => setIsMenuOpen(true)}>
               <Menu color="white" size={28} />
             </TouchableOpacity>
-            <Text className="font-bold text-xl text-white tracking-wider">🌿 ECOEAT</Text>
+            <Text className="font-bold text-xl text-white tracking-wider">🌿</Text>
             <View className="flex-1 bg-white rounded-full px-4 py-2.5 flex-row items-center gap-2">
               <Search color="#90C659" size={16} />
               <TextInput 
