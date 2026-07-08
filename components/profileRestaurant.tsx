@@ -174,7 +174,7 @@ export function ProfileRestaurant() {
         <Text className="font-bold text-sm text-gray-800 mb-3">Configuración</Text>
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
           <TouchableOpacity
-            onPress={() => Alert.alert('Próximamente', 'La edición de perfil estará disponible pronto.')}
+            onPress={() => router.push('/editProfileRestaurant')}
             className="p-4 flex-row items-center justify-between border-b border-gray-50"
           >
             <View className="flex-row items-center gap-3">
