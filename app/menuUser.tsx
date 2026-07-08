@@ -1,14 +1,14 @@
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
-import React, { useState, useCallback, useEffect } from 'react';
-import { ActivityIndicator, AppState, BackHandler, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, AppState, BackHandler, Image, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { ExitAppAlert } from '../components/ExitAppAlert';
-import { UrgentOffers } from '../components/UrgentOffers';
 import { DiscountOffers } from '../components/DiscountOffers';
-import { favoriteTab as FavoriteTab } from '../components/favoriteTab'; 
-import { profileUser as ProfileUser } from '../components/profileUser'; 
+import { ExitAppAlert } from '../components/ExitAppAlert';
+import { favoriteTab as FavoriteTab } from '../components/favoriteTab';
+import { profileUser as ProfileUser } from '../components/profileUser';
+import { UrgentOffers } from '../components/UrgentOffers';
 
 import { db } from '../firebase';
 
@@ -229,19 +229,34 @@ export default function MainMenuScreen() {
             </View>
 
             <View className="flex-col gap-3 p-4 flex-1">
-              <TouchableOpacity className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <Package color="#90C659" size={20} />
-                <Text className="text-gray-700 font-bold text-sm">Pedido Activo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <History color="#90C659" size={20} />
-                <Text className="text-gray-700 font-bold text-sm">Pedidos anteriores</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 mt-auto">
-                <AlertTriangle color="#f87171" size={20} />
-                <Text className="text-red-500 font-bold text-sm">Soporte y Quejas</Text>
-              </TouchableOpacity>
-            </View>
+  <TouchableOpacity
+    onPress={() => { setIsMenuOpen(false); router.push('/activePedido'); }}
+    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
+  >
+    <Package color="#90C659" size={20} />
+    <Text className="text-gray-700 font-bold text-sm">Pedido Activo</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => { setIsMenuOpen(false); router.push('/historialPedidos'); }}
+    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
+  >
+    <History color="#90C659" size={20} />
+    <Text className="text-gray-700 font-bold text-sm">Pedidos anteriores</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => {
+      const mensaje = 'Hola, soy un cliente de EcoEat y necesito ayuda con mi pedido.';
+      const url = `https://wa.me/51999999999?text=${encodeURIComponent(mensaje)}`;
+      Linking.openURL(url).catch(() => Alert.alert('Error', 'No se pudo abrir WhatsApp.'));
+    }}
+    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 mt-auto"
+  >
+    <AlertTriangle color="#f87171" size={20} />
+    <Text className="text-red-500 font-bold text-sm">Soporte y Quejas</Text>
+  </TouchableOpacity>
+</View>
           </View>
         </View>
       )}

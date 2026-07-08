@@ -4,7 +4,7 @@ import { signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Building, ChevronRight, FileCheck2, Landmark, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Star, UtensilsCrossed } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Linking as RNLinking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking as RNLinking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../firebase';
 
 const SOPORTE_WHATSAPP = '51999999999';
@@ -82,18 +82,45 @@ export function ProfileRestaurant() {
     <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
       {/* HEADER */}
-      <View className="bg-[#90C659] pt-14 pb-10 px-6 items-center">
-        <View className="w-24 h-24 bg-white rounded-full items-center justify-center shadow-md mb-3 border-4 border-white/30">
-          <Building color="#90C659" size={40} />
+      <View style={{ backgroundColor: '#90C659', paddingTop: 60, paddingBottom: 40, paddingHorizontal: 24, alignItems: 'center' }}>
+        
+        {/* FOTO */}
+        <View style={{
+  width: 114, height: 114, borderRadius: 57,
+  overflow: 'hidden', backgroundColor: 'white',
+  marginBottom: 12, borderWidth: 4,
+  borderColor: 'rgba(255,255,255,0.5)',
+}}>
+  <Image
+    source={{ uri: data.imagenUrl }}
+    style={{ width: 106, height: 106, margin: 0 }}
+    resizeMode="cover"
+  />
+          {data?.imagenUrl ? (
+            <Image
+              source={{ uri: data.imagenUrl }}
+              style={{ width: 110, height: 110 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <Building color="#90C659" size={40} />
+            </View>
+          )}
         </View>
-        <Text className="text-2xl font-black text-white">{data?.nombre || data?.razonSocial || 'Tu Restaurante'}</Text>
+
+        <Text style={{ fontSize: 22, fontWeight: '900', color: 'white', marginBottom: 2 }}>
+          {data?.nombre || data?.razonSocial || 'Tu Restaurante'}
+        </Text>
         {data?.razonSocial && data?.nombre && (
-          <Text className="text-white/70 text-xs mt-0.5">{data.razonSocial}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 2 }}>{data.razonSocial}</Text>
         )}
-        <Text className="text-white/80 text-sm font-medium mt-1">RUC: {data?.ruc || 'No registrado'}</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '500', marginBottom: 6 }}>
+          RUC: {data?.ruc || 'No registrado'}
+        </Text>
         {data?.categoriaId && (
-          <View className="mt-2 bg-white/20 px-3 py-1 rounded-full">
-            <Text className="text-white text-xs font-bold capitalize">{data.categoriaId}</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 }}>
+            <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>{data.categoriaId}</Text>
           </View>
         )}
       </View>

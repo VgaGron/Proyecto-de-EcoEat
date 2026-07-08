@@ -75,11 +75,10 @@ export default function EditProfileRestaurantScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+         mediaTypes: ImagePicker.MediaTypeOptions.Images,
+         allowsEditing: false,
+         quality: 0.8,
+         });
     if (!result.canceled && result.assets?.length > 0) {
       setProfileImage(result.assets[0]);
     }
