@@ -1,12 +1,13 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Building, ChevronRight, FileCheck2, Landmark, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Star, UtensilsCrossed } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking as RNLinking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../firebase';
 
-const SOPORTE_WHATSAPP = '51999999999'; // Número de soporte EcoEat
+const SOPORTE_WHATSAPP = '51999999999';
 
 export function ProfileRestaurant() {
   const router = useRouter();
@@ -15,11 +16,12 @@ export function ProfileRestaurant() {
   const [totalProductos, setTotalProductos] = useState(0);
   const [totalPedidos, setTotalPedidos] = useState(0);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     const fetchData = async () => {
       if (!auth.currentUser) return;
       const uid = auth.currentUser.uid;
       try {
+        setLoading(true);
         const restRef = doc(db, 'restaurantes', uid);
         const restSnap = await getDoc(restRef);
         if (restSnap.exists()) setData(restSnap.data());
@@ -44,7 +46,7 @@ export function ProfileRestaurant() {
       }
     };
     fetchData();
-  }, []);
+  }, []));
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que deseas salir?', [
@@ -89,7 +91,6 @@ export function ProfileRestaurant() {
           <Text className="text-white/70 text-xs mt-0.5">{data.razonSocial}</Text>
         )}
         <Text className="text-white/80 text-sm font-medium mt-1">RUC: {data?.ruc || 'No registrado'}</Text>
-
         {data?.categoriaId && (
           <View className="mt-2 bg-white/20 px-3 py-1 rounded-full">
             <Text className="text-white text-xs font-bold capitalize">{data.categoriaId}</Text>
@@ -170,7 +171,7 @@ export function ProfileRestaurant() {
           </View>
         </View>
 
-        {/* EDITAR PERFIL */}
+        {/* CONFIGURACIÓN */}
         <Text className="font-bold text-sm text-gray-800 mb-3">Configuración</Text>
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
           <TouchableOpacity
