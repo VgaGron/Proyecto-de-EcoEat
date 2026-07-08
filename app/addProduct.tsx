@@ -1,4 +1,4 @@
-import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { addDoc, collection } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
@@ -10,19 +10,11 @@ import { auth, db, storage } from '../firebase';
 const CATEGORIES = ['Panadería', 'Menú', 'Comida Rápida', 'Postres', 'Cafetería', 'Vegano'];
 const ALERGENOS_OPCIONES = ['gluten', 'lactosa', 'frutos secos', 'mariscos', 'huevo', 'soja'];
 
-const ALERGENOS_ICONS: Record<string, string> = {
-  gluten: '🌾',
-  lactosa: '🥛',
-  'frutos secos': '🥜',
-  mariscos: '🦐',
-  huevo: '🥚',
-  soja: '🫘',
-};
-
 export default function AddProductScreen() {
   const router = useRouter();
 
   const [productType, setProductType] = useState<'pack' | 'plato'>('plato');
+
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -35,7 +27,8 @@ export default function AddProductScreen() {
 
   const [category, setCategory] = useState('');
   const [alergenos, setAlergenos] = useState<string[]>([]);
-  const [productImage, setProductImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [productImage, setProductImage] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState(false);
@@ -47,22 +40,17 @@ export default function AddProductScreen() {
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (status !== 'granted') {
-      setErrorMsg('Necesitamos permiso para acceder a tus fotos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  allowsEditing: true,
-  aspect: [4, 3],
-  quality: 0.8,
-});
-
-    if (!result.canceled && result.assets?.length > 0) {
-      setProductImage(result.assets[0]);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setProductImage(result.assets[0]);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Error al seleccionar la imagen.');
     }
   };
 
@@ -75,7 +63,15 @@ export default function AddProductScreen() {
   };
 
   const resetForm = () => {
-    setFormData({ nombre: '', descripcion: '', precioOriginal: '', precioOferta: '', cantidadDisponible: '', horaInicio: '', horaFin: '' });
+    setFormData({
+      nombre: '',
+      descripcion: '',
+      precioOriginal: '',
+      precioOferta: '',
+      cantidadDisponible: '',
+      horaInicio: '',
+      horaFin: ''
+    });
     setCategory('');
     setAlergenos([]);
     setProductImage(null);
@@ -84,7 +80,9 @@ export default function AddProductScreen() {
   const validate = () => {
     if (!formData.nombre.trim()) return 'El nombre del producto es obligatorio.';
     if (!formData.precioOriginal || !formData.precioOferta) return 'Ingresa ambos precios.';
-    if (Number(formData.precioOferta) >= Number(formData.precioOriginal)) return 'El precio de oferta debe ser menor al precio original.';
+    if (Number(formData.precioOferta) >= Number(formData.precioOriginal)) {
+      return 'El precio de oferta debe ser menor al precio original.';
+    }
     if (!formData.cantidadDisponible) return 'Indica la cantidad disponible.';
     if (!formData.horaInicio.trim() || !formData.horaFin.trim()) return 'Ingresa la hora de inicio y fin.';
     if (!category) return 'Selecciona una categoría.';
@@ -93,17 +91,29 @@ export default function AddProductScreen() {
 
   const handleSave = async () => {
     const validationError = validate();
-    if (validationError) { setErrorMsg(validationError); return; }
-    if (!auth.currentUser) { setErrorMsg('Debes iniciar sesión como restaurante.'); return; }
+    if (validationError) {
+      setErrorMsg(validationError);
+      return;
+    }
+
+    if (!auth.currentUser) {
+      setErrorMsg('Debes iniciar sesión como restaurante.');
+      return;
+    }
 
     try {
       setIsLoading(true);
       setErrorMsg('');
+
       let imagenUrl = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400';
+
       if (productImage) {
-        imagenUrl = await uploadToFirebase(productImage.uri, `productos/${auth.currentUser.uid}_${Date.now()}`);
+        const path = `productos/${auth.currentUser.uid}_${Date.now()}`;
+        imagenUrl = await uploadToFirebase(productImage.uri, path);
       }
+
       const collectionName = productType === 'pack' ? 'packs_sopresa' : 'platos_independientes';
+
       await addDoc(collection(db, collectionName), {
         restauranteId: auth.currentUser.uid,
         nombre: formData.nombre.trim(),
@@ -118,235 +128,224 @@ export default function AddProductScreen() {
         alergenos,
         fecha_creacion: new Date().toISOString(),
       });
+
       setSuccessMsg(true);
       resetForm();
+
       setTimeout(() => setSuccessMsg(false), 2500);
+
     } catch (error) {
+      console.error('Error al guardar producto:', error);
       setErrorMsg('Ocurrió un error al guardar. Revisa tu conexión.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const descuento = formData.precioOriginal && formData.precioOferta
-    ? Math.round((1 - Number(formData.precioOferta) / Number(formData.precioOriginal)) * 100)
-    : 0;
-
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 flex-col relative">
 
-      {/* HEADER */}
-      <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md">
-        <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full bg-white/20 mr-3">
-          <ArrowLeft color="white" size={22} />
+      <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md z-10">
+        <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full">
+          <ArrowLeft color="white" size={24} />
         </TouchableOpacity>
-        <View>
-          <Text className="font-black text-lg text-white">Subir Producto</Text>
-          <Text className="text-white/70 text-xs">Completa los datos del producto</Text>
-        </View>
+        <Text className="font-bold text-lg text-white ml-3">Subir Producto</Text>
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
 
         {errorMsg ? (
-          <View className="bg-red-50 p-3 rounded-xl mb-4 border border-red-200 flex-row items-center gap-2">
-            <AlertTriangle color="#dc2626" size={16} />
+          <View className="bg-red-50 p-3 rounded-xl mb-4 border border-red-100 flex-row items-start gap-2">
+            <AlertTriangle color="#dc2626" size={18} style={{ marginTop: 2 }} />
             <Text className="text-red-600 text-xs font-bold flex-1">{errorMsg}</Text>
           </View>
         ) : null}
 
         {successMsg ? (
           <View className="bg-green-50 p-3 rounded-xl mb-4 border border-green-200 flex-row items-center gap-2">
-            <Check color="#16a34a" size={16} />
+            <Check color="#16a34a" size={18} />
             <Text className="text-green-700 text-xs font-bold flex-1">¡Producto publicado con éxito!</Text>
           </View>
         ) : null}
 
-        {/* TIPO DE PRODUCTO */}
-        <Text className="font-black text-sm text-gray-800 mb-3">📦 Tipo de producto</Text>
-        <View className="flex-row gap-3 mb-6">
-          {[
-            { key: 'plato', label: 'Plato', sublabel: 'Independiente', icon: <UtensilsCrossed size={28} color={productType === 'plato' ? '#fff' : '#9ca3af'} /> },
-            { key: 'pack', label: 'Pack', sublabel: 'Sorpresa', icon: <Gift size={28} color={productType === 'pack' ? '#fff' : '#9ca3af'} /> },
-          ].map((opt) => (
-            <TouchableOpacity
-              key={opt.key}
-              onPress={() => setProductType(opt.key as 'plato' | 'pack')}
-              className={`flex-1 py-5 rounded-2xl items-center justify-center gap-1 ${productType === opt.key ? 'bg-[#90C659]' : 'bg-white border border-gray-200'}`}
-            >
-              {opt.icon}
-              <Text className={`font-black text-sm mt-1 ${productType === opt.key ? 'text-white' : 'text-gray-700'}`}>{opt.label}</Text>
-              <Text className={`text-[10px] font-medium ${productType === opt.key ? 'text-white/80' : 'text-gray-400'}`}>{opt.sublabel}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Selector de tipo de producto */}
+        <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Tipo de producto</Text>
+        <View className="flex-row gap-3 mb-5">
+          <TouchableOpacity
+            onPress={() => setProductType('plato')}
+            className={`flex-1 flex-col items-center justify-center py-4 rounded-2xl border-2 ${
+              productType === 'plato' ? 'border-[#90C659] bg-green-50' : 'border-gray-200 bg-white'
+            }`}
+          >
+            <UtensilsCrossed color={productType === 'plato' ? '#90C659' : '#9ca3af'} size={24} />
+            <Text className={`text-xs font-bold mt-2 ${productType === 'plato' ? 'text-[#90C659]' : 'text-gray-500'}`}>
+              Plato Independiente
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setProductType('pack')}
+            className={`flex-1 flex-col items-center justify-center py-4 rounded-2xl border-2 ${
+              productType === 'pack' ? 'border-[#90C659] bg-green-50' : 'border-gray-200 bg-white'
+            }`}
+          >
+            <Gift color={productType === 'pack' ? '#90C659' : '#9ca3af'} size={24} />
+            <Text className={`text-xs font-bold mt-2 ${productType === 'pack' ? 'text-[#90C659]' : 'text-gray-500'}`}>
+              Pack Sorpresa
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* FOTO */}
-        <Text className="font-black text-sm text-gray-800 mb-3">📸 Foto del producto</Text>
-        <TouchableOpacity onPress={pickImage} className="w-full h-44 rounded-2xl overflow-hidden mb-6 border-2 border-dashed border-gray-300 bg-white items-center justify-center">
+        {/* Imagen del producto */}
+        <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Foto del producto</Text>
+        <TouchableOpacity
+          onPress={pickImage}
+          className="w-full h-40 bg-white rounded-2xl border-2 border-dashed border-gray-300 items-center justify-center overflow-hidden mb-5"
+        >
           {productImage ? (
             <Image source={{ uri: productImage.uri }} className="w-full h-full" resizeMode="cover" />
           ) : (
-            <View className="items-center gap-2">
-              <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
-                <Camera color="#9ca3af" size={28} />
-              </View>
-              <Text className="text-gray-400 text-sm font-bold">Toca para subir una foto</Text>
-              <Text className="text-gray-300 text-xs">JPG, PNG recomendado</Text>
+            <View className="items-center">
+              <Camera color="#9ca3af" size={28} />
+              <Text className="text-xs text-gray-400 font-bold mt-1">Toca para subir una foto</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        {/* DATOS BÁSICOS */}
-        <Text className="font-black text-sm text-gray-800 mb-3">📝 Información del producto</Text>
-        <View className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-4">
-          <View className="px-4 pt-4 pb-3 border-b border-gray-50">
-            <Text className="text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Nombre</Text>
-            <TextInput
-              placeholder="Ej. Pan de molde artesanal"
-              value={formData.nombre}
-              onChangeText={(t) => setFormData({ ...formData, nombre: t })}
-              className="text-sm font-medium text-gray-800"
-              placeholderTextColor="#d1d5db"
-            />
-          </View>
-          <View className="px-4 pt-3 pb-4">
-            <Text className="text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Descripción</Text>
-            <TextInput
-              placeholder="Cuéntale al cliente qué incluye..."
-              value={formData.descripcion}
-              onChangeText={(t) => setFormData({ ...formData, descripcion: t })}
-              multiline
-              numberOfLines={3}
-              className="text-sm font-medium text-gray-800"
-              style={{ textAlignVertical: 'top', minHeight: 60 }}
-              placeholderTextColor="#d1d5db"
-            />
-          </View>
+        {/* Datos básicos */}
+        <View className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+          <Text className="font-bold text-xs text-gray-700 mb-1">Nombre del producto</Text>
+          <TextInput
+            placeholder="Ej. Pan de molde artesanal"
+            value={formData.nombre}
+            onChangeText={(t) => setFormData({ ...formData, nombre: t })}
+            className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800 mb-3"
+          />
+
+          <Text className="font-bold text-xs text-gray-700 mb-1">Descripción</Text>
+          <TextInput
+            placeholder="Cuéntale al cliente qué incluye"
+            value={formData.descripcion}
+            onChangeText={(t) => setFormData({ ...formData, descripcion: t })}
+            multiline
+            numberOfLines={3}
+            className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-800"
+            style={{ textAlignVertical: 'top', minHeight: 70 }}
+          />
         </View>
 
-        {/* PRECIOS */}
-        <Text className="font-black text-sm text-gray-800 mb-3">💰 Precios y disponibilidad</Text>
-        <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
-
-          <View className="flex-row gap-3 mb-4">
-            <View className="flex-1 bg-gray-50 rounded-xl p-3">
-              <Text className="text-xs font-bold text-gray-400 mb-1">Precio original</Text>
-              <View className="flex-row items-center gap-1">
-                <Text className="text-gray-400 font-bold text-sm">S/.</Text>
-                <TextInput
-                  placeholder="0.00"
-                  value={formData.precioOriginal}
-                  onChangeText={(t) => setFormData({ ...formData, precioOriginal: t.replace(/[^0-9.]/g, '') })}
-                  keyboardType="decimal-pad"
-                  className="flex-1 text-base font-black text-gray-700"
-                  placeholderTextColor="#d1d5db"
-                />
-              </View>
+        {/* Precios y stock */}
+        <View className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+          <View className="flex-row gap-3 mb-3">
+            <View className="flex-1">
+              <Text className="font-bold text-xs text-gray-700 mb-1">Precio original (S/.)</Text>
+              <TextInput
+                placeholder="0.00"
+                value={formData.precioOriginal}
+                onChangeText={(t) => setFormData({ ...formData, precioOriginal: t.replace(/[^0-9.]/g, '') })}
+                keyboardType="decimal-pad"
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
+              />
             </View>
-            <View className="flex-1 bg-green-50 rounded-xl p-3 border border-green-100">
-              <Text className="text-xs font-bold text-green-600 mb-1">Precio oferta</Text>
-              <View className="flex-row items-center gap-1">
-                <Text className="text-green-500 font-bold text-sm">S/.</Text>
-                <TextInput
-                  placeholder="0.00"
-                  value={formData.precioOferta}
-                  onChangeText={(t) => setFormData({ ...formData, precioOferta: t.replace(/[^0-9.]/g, '') })}
-                  keyboardType="decimal-pad"
-                  className="flex-1 text-base font-black text-green-700"
-                  placeholderTextColor="#d1d5db"
-                />
-              </View>
+            <View className="flex-1">
+              <Text className="font-bold text-xs text-gray-700 mb-1">Precio oferta (S/.)</Text>
+              <TextInput
+                placeholder="0.00"
+                value={formData.precioOferta}
+                onChangeText={(t) => setFormData({ ...formData, precioOferta: t.replace(/[^0-9.]/g, '') })}
+                keyboardType="decimal-pad"
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
+              />
             </View>
           </View>
 
-          {descuento > 0 && (
-            <View className="bg-orange-50 rounded-xl p-2.5 mb-4 flex-row items-center gap-2">
-              <Text className="text-lg">🎉</Text>
-              <Text className="text-orange-600 font-bold text-sm">¡Descuento del {descuento}% aplicado!</Text>
-            </View>
-          )}
-
+          {/* LA NUEVA FILA DE STOCK Y HORARIOS EXACTOS */}
           <View className="flex-row gap-3">
-            <View className="w-1/3 bg-gray-50 rounded-xl p-3">
-              <Text className="text-xs font-bold text-gray-400 mb-1">Stock</Text>
+            <View className="w-1/3">
+              <Text className="font-bold text-xs text-gray-700 mb-1">Stock</Text>
               <TextInput
-                placeholder="0"
+                placeholder="Ej. 5"
                 value={formData.cantidadDisponible}
                 onChangeText={(t) => setFormData({ ...formData, cantidadDisponible: t.replace(/[^0-9]/g, '') })}
                 keyboardType="numeric"
-                className="text-base font-black text-gray-700"
-                placeholderTextColor="#d1d5db"
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
               />
             </View>
-            <View className="flex-1 bg-gray-50 rounded-xl p-3">
-              <Text className="text-xs font-bold text-gray-400 mb-1">🕐 Inicia</Text>
+            <View className="w-1/3">
+              <Text className="font-bold text-[11px] text-gray-700 mb-1">Inicia (24h)</Text>
               <TextInput
-                placeholder="14:00"
+                placeholder="Ej. 14:00"
                 value={formData.horaInicio}
                 onChangeText={(t) => setFormData({ ...formData, horaInicio: t })}
-                className="text-base font-black text-gray-700"
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
                 maxLength={5}
-                placeholderTextColor="#d1d5db"
               />
             </View>
-            <View className="flex-1 bg-gray-50 rounded-xl p-3">
-              <Text className="text-xs font-bold text-gray-400 mb-1">🕐 Termina</Text>
+            <View className="w-1/3">
+              <Text className="font-bold text-[11px] text-gray-700 mb-1">Termina (24h)</Text>
               <TextInput
-                placeholder="18:00"
+                placeholder="Ej. 18:30"
                 value={formData.horaFin}
                 onChangeText={(t) => setFormData({ ...formData, horaFin: t })}
-                className="text-base font-black text-gray-700"
+                className="bg-gray-100 rounded-xl px-3 h-12 text-sm font-medium text-gray-800"
                 maxLength={5}
-                placeholderTextColor="#d1d5db"
               />
             </View>
           </View>
         </View>
 
-        {/* CATEGORÍA */}
-        <Text className="font-black text-sm text-gray-800 mb-3">🍽️ Categoría</Text>
-        <View className="flex-row flex-wrap gap-2 mb-6">
+        {/* Categoría */}
+        <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Categoría</Text>
+        <View className="flex-row flex-wrap gap-2 mb-5">
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat}
               onPress={() => setCategory(cat)}
-              className={`px-4 py-2.5 rounded-xl border ${category === cat ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-200'}`}
+              className={`px-3 py-2 rounded-xl border ${
+                category === cat ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-200'
+              }`}
             >
-              <Text className={`text-xs font-bold ${category === cat ? 'text-white' : 'text-gray-600'}`}>{cat}</Text>
+              <Text className={`text-xs font-bold ${category === cat ? 'text-white' : 'text-gray-600'}`}>
+                {cat}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* ALÉRGENOS */}
-        <Text className="font-black text-sm text-gray-800 mb-1">⚠️ Alérgenos</Text>
-        <Text className="text-xs text-gray-400 mb-3">Marca los ingredientes que pueden causar alergias</Text>
+        {/* Alérgenos */}
+        <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">
+          Alérgenos (opcional)
+        </Text>
         <View className="flex-row flex-wrap gap-2 mb-6">
           {ALERGENOS_OPCIONES.map((a) => (
             <TouchableOpacity
               key={a}
               onPress={() => toggleAlergeno(a)}
-              className={`px-3 py-2 rounded-xl border flex-row items-center gap-1.5 ${alergenos.includes(a) ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200'}`}
+              className={`px-3 py-2 rounded-xl border flex-row items-center gap-1 ${
+                alergenos.includes(a) ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200'
+              }`}
             >
-              <Text>{ALERGENOS_ICONS[a]}</Text>
-              <Text className={`text-xs font-bold capitalize ${alergenos.includes(a) ? 'text-red-600' : 'text-gray-600'}`}>{a}</Text>
-              {alergenos.includes(a) && <Check color="#dc2626" size={12} />}
+              {alergenos.includes(a) && <AlertTriangle color="#dc2626" size={12} />}
+              <Text className={`text-xs font-bold capitalize ${alergenos.includes(a) ? 'text-red-600' : 'text-gray-600'}`}>
+                {a}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
       </ScrollView>
 
-      {/* BOTÓN FIJO */}
-      <View className="absolute bottom-0 w-full px-4 pt-3 pb-8 bg-white border-t border-gray-100">
+      {/* Botón fijo inferior */}
+      <View className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-white shadow-lg pb-8">
         <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading}
-          className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-2 ${isLoading ? 'bg-gray-300' : 'bg-[#90C659]'}`}
-          style={{ shadowColor: '#90C659', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
+          className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-2 ${
+            isLoading ? 'bg-gray-300' : 'bg-[#90C659] shadow-lg'
+          }`}
         >
-          {isLoading ? <ActivityIndicator color="white" size="small" /> : <Check color="white" size={18} />}
-          <Text className="text-white font-black text-base">
+          {isLoading && <ActivityIndicator color="white" size="small" />}
+          <Text className="text-white font-bold text-base">
             {isLoading ? 'Guardando...' : 'Publicar producto'}
           </Text>
         </TouchableOpacity>

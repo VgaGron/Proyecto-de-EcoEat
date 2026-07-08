@@ -6,6 +6,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, Touc
 import MapView, { Marker } from 'react-native-maps';
 
 import { UrgentOffers } from '../components/UrgentOffers';
+import { DiscountOffers } from '../components/DiscountOffers';
 import { favoriteTab as FavoriteTab } from '../components/favoriteTab'; 
 import { profileUser as ProfileUser } from '../components/profileUser'; 
 
@@ -34,6 +35,7 @@ export default function MainMenuScreen() {
   
   const [restaurantsData, setRestaurantsData] = useState<any[]>([]);
   const [urgentOffersList, setUrgentOffersList] = useState<any[]>([]);
+  const [discountOffersList, setDiscountOffersList] = useState<any[]>([]);
   const [upcomingOffersList, setUpcomingOffersList] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -61,9 +63,10 @@ export default function MainMenuScreen() {
 
       const now = new Date();
       const urgentMap = new Map();
+      const discountMap = new Map();
       const upcomingMap = new Map();
 
-      const processOffers = (snap: any) => {
+      const processOffers = (snap: any, collectionName: string) => {
         snap.docs.forEach((docSnap: any) => {
           const data = docSnap.data();
           if (!data.restauranteId || !restaurantesDict[data.restauranteId]) return;
@@ -93,6 +96,17 @@ export default function MainMenuScreen() {
           } 
           else if (now >= startDate && now <= expDate) {
             const leftMins = (expDate.getTime() - now.getTime()) / 60000;
+            const baseOffer = {
+              id: `${collectionName}-${docSnap.id}`,
+              restauranteId: data.restauranteId,
+              restaurantName: restInfo.nombre,
+              name: data.nombre || data.name || 'Producto sin nombre',
+              image: data.imagenUrl || data.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
+              originalPrice: Number(data.precioOriginal ?? data.originalPrice ?? 0),
+              discountPrice: Number(data.precioOferta ?? data.discountPrice ?? 0),
+              timeLeft: formatTimeLeft(leftMins),
+            };
+
             if (leftMins <= 120) { 
               if (!urgentMap.has(data.restauranteId)) {
                 urgentMap.set(data.restauranteId, {
@@ -111,18 +125,22 @@ export default function MainMenuScreen() {
                 existing.minEndMins = expDate.getTime();
                 existing.timeLeft = formatTimeLeft(leftMins);
               }
+            } else {
+              discountMap.set(baseOffer.id, baseOffer);
             }
           }
         });
       };
 
-      processOffers(packsSnap);
-      processOffers(platosSnap);
+      processOffers(packsSnap, 'packs_sopresa');
+      processOffers(platosSnap, 'platos_independientes');
 
       const finalUrgent = Array.from(urgentMap.values());
+      const finalDiscount = Array.from(discountMap.values());
       const finalUpcoming = Array.from(upcomingMap.values()).sort((a, b) => a.minStartTime - b.minStartTime);
 
       setUrgentOffersList(finalUrgent);
+      setDiscountOffersList(finalDiscount);
       setUpcomingOffersList(finalUpcoming);
       setRestaurantsData(fetchedRestaurants);
 
@@ -273,6 +291,13 @@ export default function MainMenuScreen() {
                 <UrgentOffers 
                   restaurants={urgentOffersList} 
                   onRestaurantClick={(idRestaurante) => { router.push(`/RestaurantMenu?id=${idRestaurante}`) }} 
+                />
+              )}
+
+              {discountOffersList.length > 0 && (
+                <DiscountOffers
+                  offers={discountOffersList}
+                  onOfferClick={(idRestaurante) => { router.push(`/RestaurantMenu?id=${idRestaurante}`) }}
                 />
               )}
 
