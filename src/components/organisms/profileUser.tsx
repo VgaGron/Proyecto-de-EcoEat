@@ -1,10 +1,10 @@
+import { auth, db } from '@/services/firebase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'; 
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { Award, Check, ChevronRight, Clock, Coins, Leaf, LogOut, Package, Settings, ShieldCheck, ShoppingBag, Wallet, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '@/services/firebase';
 
 const ALERGIAS_DISPONIBLES = ["Sin Gluten", "Nueces", "Lactosa", "Mariscos", "Vegano", "Vegetariano"];
 
