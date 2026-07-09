@@ -7,7 +7,7 @@ import { AlertTriangle, ArrowLeft, Camera, Check, MapPin } from 'lucide-react-na
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '@/services/firebase';
 
 const CATEGORIES = ['Panadería', 'Menú', 'Comida Rápida', 'Postres', 'Cafetería'];
 

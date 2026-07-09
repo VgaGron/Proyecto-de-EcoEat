@@ -1,11 +1,11 @@
+import { DynamicLoader } from '@/components/atoms/DynamicLoader';
+import { ModalitySelector } from '@/components/molecules/ModalitySelector';
+import { auth, db } from '@/services/firebase';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { addDoc, collection, doc, increment, updateDoc } from 'firebase/firestore';
+import { ArrowLeft, CheckCircle2, CreditCard, MapPin, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Smartphone, CreditCard, Wallet, MapPin, CheckCircle2, ShieldCheck } from 'lucide-react-native';
-import { DynamicLoader } from '../components/DynamicLoader'; 
-import { ModalitySelector } from '../components/ModalitySelector'; 
-import { auth, db } from '../firebase';
-import { collection, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -83,7 +83,7 @@ export default function CheckoutScreen() {
   const onPaymentComplete = () => {
     if (generatedOrderId) {
       router.replace({
-        pathname: '/success',
+        pathname: '/menu/success',
         params: { 
           orderId: generatedOrderId, 
           modality: selectedModality, 

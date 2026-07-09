@@ -1,13 +1,13 @@
+import { AlertComponent } from '@/components/molecules/AlertComponent';
+import { RestaurantMenuItemCard, type RestaurantMenuItem } from '@/components/molecules/RestaurantMenuItemCard';
+import { RestaurantCheckoutBar } from '@/components/organisms/RestaurantCheckoutBar';
+import { RestaurantMenuSection } from '@/components/organisms/RestaurantMenuSection';
+import { auth, db } from '@/services/firebase';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { AlertComponent } from "../components/AlertComponent";
-import { RestaurantCheckoutBar } from "../components/RestaurantCheckoutBar";
-import { RestaurantMenuItemCard, type RestaurantMenuItem } from "../components/RestaurantMenuItemCard";
-import { RestaurantMenuSection } from "../components/RestaurantMenuSection";
-import { auth, db } from "../firebase";
 
 const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
@@ -209,7 +209,7 @@ export default function RestaurantMenuScreen() {
       .filter((item) => item.quantity > 0);
 
     router.push({
-      pathname: '/checkout', 
+      pathname: '/menu/checkout', 
       params: { 
         cartStr: JSON.stringify(cartItems), 
         total: totalAmount,

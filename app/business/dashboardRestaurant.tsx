@@ -1,3 +1,7 @@
+import { ExitAppAlert } from '@/components/molecules/ExitAppAlert';
+import { dishesTab as DishesTab } from '@/components/organisms/dishesTab';
+import { ProfileRestaurant } from '@/components/organisms/profileRestaurant';
+import { auth, db } from '@/services/firebase';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
@@ -5,10 +9,6 @@ import { Camera as CameraIcon, Clock, Coins, Home, Leaf, Package, QrCode, Shoppi
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, AppState, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { ExitAppAlert } from '../components/ExitAppAlert';
-import { dishesTab as DishesTab } from '../components/dishesTab';
-import { ProfileRestaurant } from '../components/profileRestaurant';
-import { auth, db } from '../firebase';
 
 const parseTimeToSeconds = (timeStr: string): number => {
   if (!timeStr) return 0;

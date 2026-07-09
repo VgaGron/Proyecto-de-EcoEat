@@ -4,7 +4,7 @@ import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'fireb
 import { Award, Check, ChevronRight, Clock, Coins, Leaf, LogOut, Package, Settings, ShieldCheck, ShoppingBag, Wallet, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 
 const ALERGIAS_DISPONIBLES = ["Sin Gluten", "Nueces", "Lactosa", "Mariscos", "Vegano", "Vegetariano"];
 
@@ -121,7 +121,7 @@ export function profileUser() {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sí, salir', style: 'destructive', onPress: async () => {
           await signOut(auth);
-          router.replace('/login');
+          router.replace('/auth/login');
         } 
       }
     ]);

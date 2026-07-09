@@ -26,7 +26,7 @@ export default function RegisterRoleSelector() {
       <View className="w-full max-w-sm z-10">
         
         <TouchableOpacity 
-          onPress={() => router.push('/register-user')} 
+          onPress={() => router.push('/auth/register-user')} 
           className="w-full bg-white p-6 rounded-[32px] shadow-sm border-2 border-transparent flex-row items-center gap-5 relative overflow-hidden mb-4"
         >
           <View className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center shrink-0">
@@ -39,7 +39,7 @@ export default function RegisterRoleSelector() {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          onPress={() => router.push('/register-restaurant')} 
+          onPress={() => router.push('/auth/register-restaurant')} 
           className="w-full bg-white p-6 rounded-[32px] shadow-sm border-2 border-transparent flex-row items-center gap-5 relative overflow-hidden"
         >
           <View className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0">

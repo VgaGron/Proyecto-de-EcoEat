@@ -15,7 +15,7 @@ import {
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 
 const  COLORS = {
   bg: '#F5F7F1',

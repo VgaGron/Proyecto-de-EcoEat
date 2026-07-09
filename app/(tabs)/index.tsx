@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { addDoc, collection } from "firebase/firestore";
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function WelcomeScreen() {
         <View className="w-full flex-col gap-3">
 
           <TouchableOpacity
-            onPress={() => router.push('/registerselector')}
+            onPress={() => router.push('/auth/registerselector')}
             className="w-full bg-[#4caf50] rounded-2xl py-4 flex-col items-center justify-center shadow-lg"
           >
             <Text className="text-base font-bold text-white">Crear cuenta</Text>
@@ -72,7 +72,7 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push('/login')}
+            onPress={() => router.push('/auth/login')}
             className="w-full border-2 border-[#4caf50] rounded-2xl py-4 items-center"
           >
             <Text className="text-sm text-gray-500">¿Ya tienes cuenta? <Text className="text-[#4caf50] font-bold">Inicia sesión</Text></Text>

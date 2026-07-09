@@ -1,7 +1,7 @@
 import { AlertTriangle, Clock, Leaf, Minus, Plus, Tag } from 'lucide-react-native';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { ActionButton } from './ActionButton'; 
+import { ActionButton } from '../atoms/ActionButton';
 
 export interface RestaurantMenuItem {
   id: string;

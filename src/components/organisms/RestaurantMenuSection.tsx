@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import type { RestaurantMenuItem } from './RestaurantMenuItemCard';
+import type { RestaurantMenuItem } from '../molecules/RestaurantMenuItemCard';
 
 interface RestaurantMenuSectionProps {
   title: string;

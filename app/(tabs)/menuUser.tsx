@@ -1,16 +1,16 @@
+import { ExitAppAlert } from '@/components/molecules/ExitAppAlert';
+import { DiscountOffers } from '@/components/organisms/DiscountOffers';
+import { favoriteTab as FavoriteTab } from '@/components/organisms/favoriteTab';
+import { profileUser as ProfileUser } from '@/components/organisms/profileUser';
+import { UrgentOffers } from '@/components/organisms/UrgentOffers';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, BackHandler, Image, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { DiscountOffers } from '../components/DiscountOffers';
-import { ExitAppAlert } from '../components/ExitAppAlert';
-import { favoriteTab as FavoriteTab } from '../components/favoriteTab';
-import { profileUser as ProfileUser } from '../components/profileUser';
-import { UrgentOffers } from '../components/UrgentOffers';
 
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 
 const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
@@ -306,7 +306,7 @@ export default function MainMenuScreen() {
                     coordinate={{ latitude: coords.latitude, longitude: coords.longitude }}
                     title={restaurant.nombre}
                     pinColor="#90C659"
-                    onPress={() => router.push({ pathname: '/RestaurantMenu', params: { id: String(restaurant.id) } })}
+                    onPress={() => router.push({ pathname: '/menu/[id]', params: { id: String(restaurant.id) } })}
                   />
                 );
               })}
@@ -345,14 +345,14 @@ export default function MainMenuScreen() {
               {urgentOffersList.length > 0 && (
                 <UrgentOffers 
                   restaurants={urgentOffersList} 
-                  onRestaurantClick={(idRestaurante) => { router.push(`/RestaurantMenu?id=${idRestaurante}`) }} 
+                  onRestaurantClick={(idRestaurante) => { router.push(`/menu/${idRestaurante}`) }} 
                 />
               )}
 
               {discountOffersList.length > 0 && (
                 <DiscountOffers
                   offers={discountOffersList}
-                  onOfferClick={(idRestaurante) => { router.push(`/RestaurantMenu?id=${idRestaurante}`) }}
+                  onOfferClick={(idRestaurante) => { router.push(`/menu/${idRestaurante}`) }}
                 />
               )}
 
@@ -366,7 +366,7 @@ export default function MainMenuScreen() {
                     {upcomingOffersList.map((offer, index) => (
                       <TouchableOpacity 
                         key={index} 
-                        onPress={() => router.push(`/RestaurantMenu?id=${offer.restauranteId}`)}
+                        onPress={() => router.push(`/menu/${offer.restauranteId}`)}
                         className="w-[150px] bg-white border border-gray-200 rounded-xl p-3 shadow-sm mr-2"
                       >
                         <Text className="text-xs text-gray-500 font-medium mb-1">Disponible a las:</Text>
@@ -391,7 +391,7 @@ export default function MainMenuScreen() {
                     {filteredRestaurants.map((restaurant) => (
                       <TouchableOpacity 
                         key={restaurant.id} 
-                        onPress={() => { router.push({ pathname: '/RestaurantMenu', params: { id: String(restaurant.id) } }); }}
+                        onPress={() => { router.push({ pathname: '/menu/[id]', params: { id: String(restaurant.id) } }); }}
                         className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
                       >
                         <View className="h-32 bg-gray-200 relative">

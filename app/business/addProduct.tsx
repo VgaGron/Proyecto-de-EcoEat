@@ -5,7 +5,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { AlertTriangle, ArrowLeft, Camera, Check, Gift, UtensilsCrossed } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '@/services/firebase';
 
 const CATEGORIES = ['Panadería', 'Menú', 'Comida Rápida', 'Postres', 'Cafetería', 'Vegano'];
 const ALERGENOS_OPCIONES = ['gluten', 'lactosa', 'frutos secos', 'mariscos', 'huevo', 'soja'];

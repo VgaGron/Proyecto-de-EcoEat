@@ -3,7 +3,7 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { ArrowLeft, Clock, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 
 export default function HistorialPedidosScreen() {
   const router = useRouter();

@@ -6,7 +6,7 @@ import { AlertTriangle, Lock, Mail, ShieldCheck, User } from 'lucide-react-nativ
 import React, { useRef, useState } from 'react';
 import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 
 const EMAILJS_SERVICE_ID = 'service_dwcgwsh';
 const EMAILJS_TEMPLATE_ID = 'template_1zrwhfo';
@@ -122,7 +122,7 @@ export default function LoginScreen() {
     try {
       setIsLoading(true);
       await signInWithEmailAndPassword(auth, pendingUserData.email, pendingUserData.password);
-      router.replace('/dashboardRestaurant');
+      router.replace('/business/dashboardRestaurant');
     } catch (error) {
       setOtpError('Error al verificar. Intenta de nuevo.');
     } finally {
@@ -256,7 +256,7 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="items-center mb-4" onPress={() => router.push('/forgot-password')}>
+        <TouchableOpacity className="items-center mb-4" onPress={() => router.push('/auth/forgot-password')}>
           <Text className="text-[#90C659] text-xs font-bold">¿Olvidaste tu contraseña?</Text>
         </TouchableOpacity>
 
@@ -278,7 +278,7 @@ export default function LoginScreen() {
 
       <View className="mt-8 flex-row items-center z-10">
         <Text className="text-gray-500 text-xs font-medium">¿No tienes cuenta? </Text>
-        <TouchableOpacity onPress={() => router.push('/registerselector')}>
+        <TouchableOpacity onPress={() => router.push('/auth/registerselector')}>
           <Text className="text-[#90C659] text-xs font-black">Regístrate</Text>
         </TouchableOpacity>
       </View>

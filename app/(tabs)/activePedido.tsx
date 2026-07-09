@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Clock, MapPin, Package, ShoppingBag } from 'luc
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 
 export default function ActivePedidoScreen() {
   const router = useRouter();

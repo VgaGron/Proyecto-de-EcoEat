@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 
 export default function RegisterUserScreen() {
   const router = useRouter();
@@ -186,7 +186,7 @@ export default function RegisterUserScreen() {
 
               <View className="flex-row justify-center mt-2">
                 <Text className="text-gray-500 text-xs font-medium">¿Ya tienes cuenta? </Text>
-                <TouchableOpacity onPress={() => router.push('/login')}>
+                <TouchableOpacity onPress={() => router.push('/auth/login')}>
                   <Text className="text-[#90C659] text-xs font-bold">Inicia sesión</Text>
                 </TouchableOpacity>
               </View>

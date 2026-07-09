@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { auth } from "../firebase";
+import { auth } from '@/services/firebase';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -63,7 +63,7 @@ export default function ForgotPassword() {
 
         <TouchableOpacity
           className="bg-[#90C659] py-4 px-10 rounded-2xl"
-          onPress={() => router.replace("/login")}
+          onPress={() => router.replace("/auth/login")}
         >
           <Text className="text-white font-bold text-base">
             Volver al inicio de sesión
@@ -149,7 +149,7 @@ export default function ForgotPassword() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.replace("/login")}
+          onPress={() => router.replace("/auth/login")}
           className="items-center mt-5"
         >
           <Text className="text-[#90C659] font-bold">

@@ -8,7 +8,7 @@ import { AlertTriangle, ArrowLeft, Camera, Check, CreditCard, FileCheck2, FileTe
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '@/services/firebase';
 
 export default function RestaurantRegisterScreen() {
   const router = useRouter();
@@ -148,7 +148,7 @@ export default function RestaurantRegisterScreen() {
       setStep(5); 
 
       setTimeout(() => {
-        router.replace('/dashboardRestaurant'); 
+        router.replace('/business/dashboardRestaurant'); 
       }, 2500);
 
     } catch (error: any) {

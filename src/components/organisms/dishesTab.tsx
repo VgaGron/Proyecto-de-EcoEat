@@ -1,9 +1,9 @@
+import { auth, db } from '@/services/firebase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { AlertTriangle, Clock, Edit2, Package, Plus, RefreshCw, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '../firebase';
 
 const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
@@ -253,7 +253,7 @@ export function dishesTab() {
       {/* BOTÓN PUBLICAR */}
       <View className="absolute bottom-6 w-full px-4 z-20">
         <TouchableOpacity
-          onPress={() => router.push('/addProduct')}
+          onPress={() => router.push('/business/addProduct')}
           className="bg-[#90C659] flex-row items-center justify-center gap-2 py-4 rounded-2xl w-full"
           style={{ shadowColor: '#90C659', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 }}
         >

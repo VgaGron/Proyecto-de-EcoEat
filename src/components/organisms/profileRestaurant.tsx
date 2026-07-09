@@ -1,3 +1,4 @@
+import { auth, db } from '@/services/firebase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
@@ -5,7 +6,6 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { Building, ChevronRight, FileCheck2, Landmark, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Star, UtensilsCrossed } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Linking as RNLinking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '../firebase';
 
 const SOPORTE_WHATSAPP = '51999999999';
 
@@ -57,7 +57,7 @@ export function ProfileRestaurant() {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Salir', style: 'destructive', onPress: async () => {
           await signOut(auth);
-          router.replace('/login');
+          router.replace('/auth/login');
         }
       },
     ]);
@@ -201,7 +201,7 @@ export function ProfileRestaurant() {
         <Text className="font-bold text-sm text-gray-800 mb-3">Configuración</Text>
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
           <TouchableOpacity
-            onPress={() => router.push('/editProfileRestaurant')}
+            onPress={() => router.push('/business/editProfileRestaurant')}
             className="p-4 flex-row items-center justify-between border-b border-gray-50"
           >
             <View className="flex-row items-center gap-3">
