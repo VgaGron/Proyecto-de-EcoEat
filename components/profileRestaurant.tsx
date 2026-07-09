@@ -11,7 +11,7 @@ const SOPORTE_WHATSAPP = '51999999999';
 
 export function ProfileRestaurant() {
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [totalProductos, setTotalProductos] = useState(0);
   const [totalPedidos, setTotalPedidos] = useState(0);
@@ -24,7 +24,11 @@ export function ProfileRestaurant() {
         setLoading(true);
         const restRef = doc(db, 'restaurantes', uid);
         const restSnap = await getDoc(restRef);
-        if (restSnap.exists()) setData(restSnap.data());
+        if (restSnap.exists()) {
+          setData(restSnap.data());
+        } else {
+          setData({});
+        }
 
         const qPacks = query(collection(db, 'packs_sopresa'), where('restauranteId', '==', uid));
         const qPlatos = query(collection(db, 'platos_independientes'), where('restauranteId', '==', uid));
@@ -83,23 +87,18 @@ export function ProfileRestaurant() {
 
       {/* HEADER */}
       <View style={{ backgroundColor: '#90C659', paddingTop: 60, paddingBottom: 40, paddingHorizontal: 24, alignItems: 'center' }}>
-        
+
         {/* FOTO */}
         <View style={{
-  width: 114, height: 114, borderRadius: 57,
-  overflow: 'hidden', backgroundColor: 'white',
-  marginBottom: 12, borderWidth: 4,
-  borderColor: 'rgba(255,255,255,0.5)',
-}}>
-  <Image
-    source={{ uri: data.imagenUrl }}
-    style={{ width: 106, height: 106, margin: 0 }}
-    resizeMode="cover"
-  />
+          width: 114, height: 114, borderRadius: 57,
+          overflow: 'hidden', backgroundColor: 'white',
+          marginBottom: 12, borderWidth: 4,
+          borderColor: 'rgba(255,255,255,0.5)',
+        }}>
           {data?.imagenUrl ? (
             <Image
               source={{ uri: data.imagenUrl }}
-              style={{ width: 110, height: 110 }}
+              style={{ width: 114, height: 114 }}
               resizeMode="cover"
             />
           ) : (
