@@ -1,5 +1,6 @@
 import { AlertComponent } from '@/components/molecules/AlertComponent';
 import { RestaurantMenuItemCard, type RestaurantMenuItem } from '@/components/molecules/RestaurantMenuItemCard';
+import { CartModal } from '@/components/organisms/CartModal';
 import { RestaurantCheckoutBar } from '@/components/organisms/RestaurantCheckoutBar';
 import { RestaurantMenuSection } from '@/components/organisms/RestaurantMenuSection';
 import { auth, db } from '@/services/firebase';
@@ -32,6 +33,7 @@ export default function RestaurantMenuScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [conflictAllergies, setConflictAllergies] = useState<string[]>([]);
   const [pendingItemToAdd, setPendingItemToAdd] = useState<any>(null);
+  const [cartModalVisible, setCartModalVisible] = useState(false);
 
   const formatData = (docSnap: any, collectionName: string): RestaurantMenuItem => {
     const data = docSnap.data();
@@ -248,7 +250,7 @@ export default function RestaurantMenuScreen() {
           <Text className="text-white/80 text-xs font-medium">Rescata comida hasta 70% dscto.</Text>
         </View>
 
-        <TouchableOpacity className="relative p-1.5">
+        <TouchableOpacity className="relative p-1.5" onPress={() => setCartModalVisible(true)}>
           <ShoppingCart color="white" size={24} />
           {totalItems > 0 && (
             <View className="absolute top-0 right-0 bg-[#CD5334] w-4 h-4 rounded-full items-center justify-center">
@@ -270,6 +272,20 @@ export default function RestaurantMenuScreen() {
         allergens={conflictAllergies} 
         onClose={cancelRiskyAdd} 
         onConfirm={confirmRiskyAdd} 
+      />
+
+      <CartModal
+        visible={cartModalVisible}
+        onClose={() => setCartModalVisible(false)}
+        items={allItems}
+        quantities={quantities}
+        totalAmount={totalAmount}
+        onIncrease={(item) => handleQuantityChange(item, 1)}
+        onDecrease={(item) => handleQuantityChange(item, -1)}
+        onCheckout={() => {
+          setCartModalVisible(false);
+          handleProceedCheckout();
+        }}
       />
       
       {loading ? (

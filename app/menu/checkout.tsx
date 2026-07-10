@@ -3,9 +3,9 @@ import { ModalitySelector } from '@/components/molecules/ModalitySelector';
 import { auth, db } from '@/services/firebase';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, increment, updateDoc } from 'firebase/firestore';
-import { ArrowLeft, CheckCircle2, CreditCard, MapPin, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, CreditCard, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -19,7 +19,6 @@ export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [ownContainer, setOwnContainer] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedOrderId, setGeneratedOrderId] = useState<string | null>(null);  
@@ -29,17 +28,46 @@ export default function CheckoutScreen() {
     { text: "¡Pago aprobado!", icon: <CheckCircle2 color="white" size={32} /> }
   ];
 
-  const isEcoEligible = selectedModality === 'tienda' || selectedModality === 'comer';
+  const isEcoEligible = true; // Ya no existe delivery; ambas modalidades restantes son elegibles
   const ecoDiscount = (ownContainer && isEcoEligible) ? 0.50 : 0;
   const finalTotal = initialTotal - ecoDiscount;
 
-  const handlePayment = async () => {
-    if (selectedModality !== 'delivery' && !selectedTime) {
-      Alert.alert("Aviso", "Por favor selecciona un horario de recojo o llegada.");
-      return;
+  // Genera 3 franjas horarias de 1 hora, empezando desde el próximo múltiplo de 30 min
+  // Genera 3 franjas horarias de 30 min, empezando desde el próximo múltiplo de 15 min
+  const timeSlots = React.useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    const remainder = 15 - (start.getMinutes() % 15 || 15);
+    start.setMinutes(start.getMinutes() + remainder, 0, 0);
+
+    const formatTime = (date: Date) => {
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const minutesStr = minutes.toString().padStart(2, '0');
+      return `${hours}:${minutesStr} ${ampm}`;
+    };
+
+    const isSameDay = (date: Date) =>
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    const slots: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const slotStart = new Date(start.getTime() + i * 30 * 60 * 1000);
+      const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+      const dayLabel = isSameDay(slotStart) ? 'Hoy' : 'Mañana';
+      slots.push(`${dayLabel}, ${formatTime(slotStart)} - ${formatTime(slotEnd)}`);
     }
-    if (selectedModality === 'delivery' && !deliveryAddress) {
-      Alert.alert("Aviso", "Por favor ingresa tu dirección de entrega.");
+
+    return slots;
+  }, []);
+
+  const handlePayment = async () => {
+    if (!selectedTime) {
+      Alert.alert("Aviso", "Por favor selecciona un horario de recojo o llegada.");
       return;
     }
 
@@ -55,8 +83,7 @@ export default function CheckoutScreen() {
         totalPagado: finalTotal,
         metodoPago: selectedPayment,
         modalidad: selectedModality,
-        horario: selectedTime || "Lo antes posible",
-        direccionDelivery: deliveryAddress || null,
+        horario: selectedTime,
         llevoEnvase: ownContainer,
         estado: "pagado_pendiente",
         fechaPedido: new Date().toISOString()
@@ -129,16 +156,6 @@ export default function CheckoutScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => { setSelectedModality('delivery'); setOwnContainer(false); }}
-              className={`flex-1 py-3 rounded-xl items-center justify-center border transition-all ${
-                selectedModality === 'delivery' ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-200'
-              }`}
-            >
-              <Text className="text-xl mb-1">🚴</Text>
-              <Text className={`font-bold text-xs ${selectedModality === 'delivery' ? 'text-white' : 'text-gray-600'}`}>Delivery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               onPress={() => { setSelectedModality('comer'); setOwnContainer(false); }}
               className={`flex-1 py-3 rounded-xl items-center justify-center border transition-all ${
                 selectedModality === 'comer' ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-200'
@@ -150,48 +167,33 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        {/* CONTENIDO CONDICIONAL SEGÚN MODALIDAD */}
-        {selectedModality === 'delivery' ? (
-          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-            <Text className="font-bold mb-3 text-gray-800">📍 Dirección de Entrega</Text>
-            <View className="flex-row items-center border border-gray-200 rounded-xl bg-gray-50 px-3 h-12">
-              <MapPin color="#9ca3af" size={20} />
-              <TextInput 
-                placeholder="Ej. Av. Pardo 123, Chimbote" 
-                value={deliveryAddress}
-                onChangeText={setDeliveryAddress}
-                className="flex-1 ml-2 text-sm text-gray-800 font-medium"
-              />
-            </View>
-            <Text className="text-[10px] text-gray-500 mt-2">* El costo de envío se calculará con la distancia final.</Text>
-          </View>
-        ) : (
-          <View className="mb-6">
-            <ModalitySelector 
-              modality={selectedModality as 'tienda' | 'comer_alli'} 
-              value={selectedTime}
-              onChange={(val) => setSelectedTime(val)}
-            />
+        {/* SECCIÓN: HORARIO Y ENVASE PROPIO */}
+        <View className="mb-6">
+          <ModalitySelector 
+            modality={selectedModality as 'tienda' | 'comer_alli'} 
+            value={selectedTime}
+            onChange={(val) => setSelectedTime(val)}
+            options={timeSlots}
+          />
 
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setOwnContainer(!ownContainer)}
-              className={`flex-row items-start gap-3 p-4 rounded-xl border transition-colors ${
-                ownContainer ? 'bg-green-50 border-[#90C659]' : 'bg-white border-gray-200'
-              }`}
-            >
-              <View className={`w-5 h-5 rounded items-center justify-center border mt-0.5 ${
-                ownContainer ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-300'
-              }`}>
-                {ownContainer && <Text className="text-white text-xs font-bold">✓</Text>}
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-bold text-gray-800">♻️ Llevaré mi propio envase</Text>
-                <Text className="text-[10px] text-gray-500 mt-0.5">Ayuda al planeta y obtén S/ 0.50 de dscto.</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setOwnContainer(!ownContainer)}
+            className={`flex-row items-start gap-3 p-4 rounded-xl border transition-colors ${
+              ownContainer ? 'bg-green-50 border-[#90C659]' : 'bg-white border-gray-200'
+            }`}
+          >
+            <View className={`w-5 h-5 rounded items-center justify-center border mt-0.5 ${
+              ownContainer ? 'bg-[#90C659] border-[#90C659]' : 'bg-white border-gray-300'
+            }`}>
+              {ownContainer && <Text className="text-white text-xs font-bold">✓</Text>}
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-gray-800">♻️ Llevaré mi propio envase</Text>
+              <Text className="text-[10px] text-gray-500 mt-0.5">Ayuda al planeta y obtén S/ 0.50 de dscto.</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* SECCIÓN 2: MÉTODO DE PAGO */}
         <View className="mb-6">
