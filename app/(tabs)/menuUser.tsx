@@ -1,16 +1,16 @@
 import { ExitAppAlert } from '@/components/molecules/ExitAppAlert';
 import { DiscountOffers } from '@/components/organisms/DiscountOffers';
-import { favoriteTab as FavoriteTab } from '@/components/organisms/favoriteTab';
+import { FavoriteTab } from '@/components/organisms/favoriteTab';
 import { profileUser as ProfileUser } from '@/components/organisms/profileUser';
 import { UrgentOffers } from '@/components/organisms/UrgentOffers';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X } from 'lucide-react-native';
+import { collection, getDocs, query, where, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { AlertTriangle, History, Home, MapPin, Menu, Package, Search, Star, User, X, Heart } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, BackHandler, Image, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 
 const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
@@ -39,6 +39,8 @@ export default function MainMenuScreen() {
   const [upcomingOffersList, setUpcomingOffersList] = useState<any[]>([]);
   const [allDishesList, setAllDishesList] = useState<any[]>([]);
 
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,6 +51,14 @@ export default function MainMenuScreen() {
     try {
       setLoading(true);
       setError(null);
+
+      if (auth.currentUser) {
+        const userRef = doc(db, 'usuarios', auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setFavoriteIds(userSnap.data().favoritos || []);
+        }
+      }
 
       const qRest = query(collection(db, "restaurantes"), where("activo", "==", true));
       const [restSnap, packsSnap, platosSnap] = await Promise.all([
@@ -111,7 +121,6 @@ export default function MainMenuScreen() {
               timeLeft: formatTimeLeft(leftMins),
             };
 
-            // Se guarda SIEMPRE en la lista completa de platos, para que la búsqueda encuentre cualquier plato disponible
             allDishesMap.set(baseOffer.id, baseOffer);
 
             if (leftMins <= 120) { 
@@ -142,15 +151,10 @@ export default function MainMenuScreen() {
       processOffers(packsSnap, 'packs_sopresa');
       processOffers(platosSnap, 'platos_independientes');
 
-      const finalUrgent = Array.from(urgentMap.values());
-      const finalDiscount = Array.from(discountMap.values());
-      const finalUpcoming = Array.from(upcomingMap.values()).sort((a, b) => a.minStartTime - b.minStartTime);
-      const finalAllDishes = Array.from(allDishesMap.values());
-
-      setUrgentOffersList(finalUrgent);
-      setDiscountOffersList(finalDiscount);
-      setUpcomingOffersList(finalUpcoming);
-      setAllDishesList(finalAllDishes);
+      setUrgentOffersList(Array.from(urgentMap.values()));
+      setDiscountOffersList(Array.from(discountMap.values()));
+      setUpcomingOffersList(Array.from(upcomingMap.values()).sort((a, b) => a.minStartTime - b.minStartTime));
+      setAllDishesList(Array.from(allDishesMap.values()));
       setRestaurantsData(fetchedRestaurants);
 
     } catch (err) {
@@ -163,6 +167,23 @@ export default function MainMenuScreen() {
 
   useFocusEffect(useCallback(() => { fetchRestaurantsAndOffers(); }, []));
 
+  const toggleFavorite = async (restaurantId: string) => {
+    if (!auth.currentUser) return;
+    try {
+      const isFav = favoriteIds.includes(restaurantId);
+      const newFavs = isFav
+        ? favoriteIds.filter(id => id !== restaurantId) 
+        : [...favoriteIds, restaurantId];               
+      setFavoriteIds(newFavs);
+      
+      const userRef = doc(db, 'usuarios', auth.currentUser.uid);
+      await updateDoc(userRef, { favoritos: newFavs });
+      
+    } catch (error) {
+      console.error("Error al guardar favorito:", error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       setShowExitAlert(false);
@@ -172,11 +193,8 @@ export default function MainMenuScreen() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        setShowExitAlert(false);
-      }
+      if (nextState === 'active') setShowExitAlert(false);
     });
-
     return () => subscription.remove();
   }, []);
 
@@ -187,11 +205,9 @@ export default function MainMenuScreen() {
           setIsMenuOpen(false);
           return true;
         }
-
         setShowExitAlert(true);
         return true;
       };
-
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
     }, [isMenuOpen])
@@ -252,34 +268,34 @@ export default function MainMenuScreen() {
             </View>
 
             <View className="flex-col gap-3 p-4 flex-1">
-  <TouchableOpacity
-    onPress={() => { setIsMenuOpen(false); router.push('/activePedido'); }}
-    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
-  >
-    <Package color="#90C659" size={20} />
-    <Text className="text-gray-700 font-bold text-sm">Pedido Activo</Text>
-  </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { setIsMenuOpen(false); router.push('/activePedido'); }}
+                className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
+              >
+                <Package color="#90C659" size={20} />
+                <Text className="text-gray-700 font-bold text-sm">Pedido Activo</Text>
+              </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={() => { setIsMenuOpen(false); router.push('/historialPedidos'); }}
-    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
-  >
-    <History color="#90C659" size={20} />
-    <Text className="text-gray-700 font-bold text-sm">Pedidos anteriores</Text>
-  </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { setIsMenuOpen(false); router.push('/historialPedidos'); }}
+                className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100"
+              >
+                <History color="#90C659" size={20} />
+                <Text className="text-gray-700 font-bold text-sm">Pedidos anteriores</Text>
+              </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={() => {
-      const mensaje = 'Hola, soy un cliente de EcoEat y necesito ayuda con mi pedido.';
-      const url = `https://wa.me/51999999999?text=${encodeURIComponent(mensaje)}`;
-      Linking.openURL(url).catch(() => Alert.alert('Error', 'No se pudo abrir WhatsApp.'));
-    }}
-    className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 mt-auto"
-  >
-    <AlertTriangle color="#f87171" size={20} />
-    <Text className="text-red-500 font-bold text-sm">Soporte y Quejas</Text>
-  </TouchableOpacity>
-</View>
+              <TouchableOpacity
+                onPress={() => {
+                  const mensaje = 'Hola, soy un cliente de EcoEat y necesito ayuda con mi pedido.';
+                  const url = `https://wa.me/51999999999?text=${encodeURIComponent(mensaje)}`;
+                  Linking.openURL(url).catch(() => Alert.alert('Error', 'No se pudo abrir WhatsApp.'));
+                }}
+                className="flex-row items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 mt-auto"
+              >
+                <AlertTriangle color="#f87171" size={20} />
+                <Text className="text-red-500 font-bold text-sm">Soporte y Quejas</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -335,18 +351,29 @@ export default function MainMenuScreen() {
                         {searchedRestaurants.map((restaurant) => (
                           <TouchableOpacity
                             key={restaurant.id}
-                            onPress={() => router.push({ pathname: '/menu/[id]', params: { id: String(restaurant.id) } })}
-                            className="bg-white border border-gray-200 rounded-xl p-4 flex-row items-center gap-3 shadow-sm"
+                            onPress={() => router.push({ pathname: '../menu/RestaurantMenu', params: { id: String(restaurant.id) } })}
+                            className="bg-white border border-gray-200 rounded-xl p-4 flex-row items-center gap-3 shadow-sm relative"
                           >
                             <Image
                               source={{ uri: restaurant.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }}
                               className="w-12 h-12 rounded-lg"
                               resizeMode="cover"
                             />
-                            <View className="flex-1">
+                            <View className="flex-1 pr-6">
                               <Text className="font-bold text-sm text-gray-900" numberOfLines={1}>{restaurant.nombre}</Text>
                               <Text className="text-xs text-gray-500">{getCategoryName(restaurant.categoriaId)}</Text>
                             </View>
+                            
+                            <TouchableOpacity 
+                              onPress={() => toggleFavorite(restaurant.id)} 
+                              className="absolute right-4 p-2"
+                            >
+                              <Heart 
+                                color={favoriteIds.includes(restaurant.id) ? "#ef4444" : "#d1d5db"} 
+                                fill={favoriteIds.includes(restaurant.id) ? "#ef4444" : "transparent"} 
+                                size={20} 
+                              />
+                            </TouchableOpacity>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -360,7 +387,7 @@ export default function MainMenuScreen() {
                         {searchedDishes.map((dish) => (
                           <TouchableOpacity
                             key={dish.id}
-                            onPress={() => router.push(`/menu/${dish.restauranteId}`)}
+                            onPress={() => router.push(`../${dish.restauranteId}`)}
                             className="bg-white border border-gray-200 rounded-xl p-4 flex-row items-center gap-3 shadow-sm"
                           >
                             <Image
@@ -404,7 +431,7 @@ export default function MainMenuScreen() {
                         coordinate={{ latitude: coords.latitude, longitude: coords.longitude }}
                         title={restaurant.nombre}
                         pinColor="#90C659"
-                        onPress={() => router.push({ pathname: '/menu/[id]', params: { id: String(restaurant.id) } })}
+                        onPress={() => router.push({ pathname: '../menu/RestaurantMenu', params: { id: String(restaurant.id) } })}
                       />
                     );
                   })}
@@ -443,14 +470,14 @@ export default function MainMenuScreen() {
                   {urgentOffersList.length > 0 && (
                     <UrgentOffers 
                       restaurants={urgentOffersList} 
-                      onRestaurantClick={(idRestaurante) => { router.push(`/menu/${idRestaurante}`) }} 
+                      onRestaurantClick={(idRestaurante) => { router.push(`../${idRestaurante}`) }} 
                     />
                   )}
 
                   {discountOffersList.length > 0 && (
                     <DiscountOffers
                       offers={discountOffersList}
-                      onOfferClick={(idRestaurante) => { router.push(`/menu/${idRestaurante}`) }}
+                      onOfferClick={(idRestaurante) => { router.push(`../${idRestaurante}`) }}
                     />
                   )}
 
@@ -464,7 +491,7 @@ export default function MainMenuScreen() {
                         {upcomingOffersList.map((offer, index) => (
                           <TouchableOpacity 
                             key={index} 
-                            onPress={() => router.push(`/menu/${offer.restauranteId}`)}
+                            onPress={() => router.push(`../${offer.restauranteId}`)}
                             className="w-[150px] bg-white border border-gray-200 rounded-xl p-3 shadow-sm mr-2"
                           >
                             <Text className="text-xs text-gray-500 font-medium mb-1">Disponible a las:</Text>
@@ -489,15 +516,27 @@ export default function MainMenuScreen() {
                         {filteredRestaurants.map((restaurant) => (
                           <TouchableOpacity 
                             key={restaurant.id} 
-                            onPress={() => { router.push({ pathname: '/menu/[id]', params: { id: String(restaurant.id) } }); }}
-                            className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+                            onPress={() => { router.push({ pathname: '../menu/RestaurantMenu', params: { id: String(restaurant.id) } }); }}
+                            className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative"
                           >
                             <View className="h-32 bg-gray-200 relative">
                               <Image source={{ uri: restaurant.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }} className="w-full h-full" resizeMode="cover" />
-                              <View className="absolute top-3 right-3 bg-white px-2.5 py-1 rounded-full flex-row items-center gap-1 shadow-sm">
+                              
+                              <View className="absolute top-3 left-3 bg-white px-2.5 py-1 rounded-full flex-row items-center gap-1 shadow-sm">
                                 <Star color="#facc15" fill="#facc15" size={14} />
                                 <Text className="text-xs font-bold text-gray-700">{restaurant.ratingPromedio || "4.5"}</Text>
                               </View>
+
+                              <TouchableOpacity 
+                                onPress={() => toggleFavorite(restaurant.id)}
+                                className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm z-20"
+                              >
+                                <Heart 
+                                  color={favoriteIds.includes(restaurant.id) ? "#ef4444" : "#9ca3af"} 
+                                  fill={favoriteIds.includes(restaurant.id) ? "#ef4444" : "transparent"} 
+                                  size={16} 
+                                />
+                              </TouchableOpacity>
                             </View>
                             <View className="p-4">
                               <Text className="font-bold text-base mb-1.5 text-gray-900">{restaurant.nombre}</Text>

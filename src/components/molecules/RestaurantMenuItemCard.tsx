@@ -96,7 +96,6 @@ export function RestaurantMenuItemCard({
               <Tag color="#4b5563" size={10} />
               <Text className="text-[9px] text-gray-600 font-medium">{item.category}</Text>
             </View>
-            {/* Si está disponible y tiene hora final, la mostramos */}
             {(!isAgotado && !isUpcoming && item.horaFin) && (
               <View className="bg-orange-50 px-1.5 py-0.5 rounded flex-row items-center gap-0.5">
                 <Clock color="#ea580c" size={10} />
@@ -116,7 +115,6 @@ export function RestaurantMenuItemCard({
             </Text>
           </View>
 
-          {/* 2. LÓGICA DE BLOQUEO DE BOTONES */}
           {isUpcoming ? (
             <View className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg">
               <Text className="text-blue-600 text-[10px] font-bold">Desde las {item.horaInicio}</Text>

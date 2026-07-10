@@ -28,7 +28,6 @@ export const ModalitySelector = ({
         {modality === 'tienda' ? '⏰ Horario para Recojo' : '⏰ Horario de Llegada'}
       </Text>
       
-      {/* Botón principal del selector */}
       <TouchableOpacity 
         activeOpacity={0.7}
         onPress={() => setIsOpen(!isOpen)}
@@ -40,7 +39,6 @@ export const ModalitySelector = ({
         {isOpen ? <ChevronUp color="#90C659" size={20} /> : <ChevronDown color="#90C659" size={20} />}
       </TouchableOpacity>
 
-      {/* Lista desplegable personalizada */}
       {isOpen && (
         <View className="mt-2 border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
           {options.map((time, index) => (

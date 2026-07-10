@@ -30,7 +30,6 @@ export default function WelcomeScreen() {
       
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Imagen superior */}
       <View className="h-[55%] overflow-hidden">
         <Image
           source={{ uri: "https://images.unsplash.com/photo-1562785561-d88a65a2679e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800" }}

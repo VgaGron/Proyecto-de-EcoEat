@@ -293,7 +293,6 @@ export default function RestaurantRegisterScreen() {
       <Text className="font-black text-2xl text-gray-900">Operativa</Text>
     </View>
 
-    {/* Campo de dirección */}
     <View className="w-full bg-gray-100 rounded-2xl flex-row px-4 pt-3 pb-3 mb-3">
       <MapPin color="#f97316" size={20} style={{marginTop: 2}} />
       <TextInput 
@@ -303,7 +302,6 @@ export default function RestaurantRegisterScreen() {
       />
     </View>
 
-    {/* Mapa interactivo */}
     <Text className="font-bold text-xs text-gray-700 mb-2">
       📍 Mueve el marcador para fijar la ubicación exacta
     </Text>
@@ -339,7 +337,6 @@ export default function RestaurantRegisterScreen() {
       </MapView>
     </View>
 
-    {/* Botones GPS y estado */}
     <View className="flex-row gap-2 mb-4">
       <TouchableOpacity 
         onPress={handleGetLocation}

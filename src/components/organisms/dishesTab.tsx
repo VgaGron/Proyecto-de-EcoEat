@@ -147,7 +147,6 @@ export function dishesTab() {
       return (
         <View key={item.id} className={`bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm mb-4 ${isHistorial ? 'opacity-70' : ''}`}>
           <View className="flex-row">
-            {/* Imagen */}
             <View className="w-28 h-32 bg-gray-100">
               <Image
                 source={{ uri: item.imagenUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' }}
@@ -161,10 +160,8 @@ export function dishesTab() {
               )}
             </View>
 
-            {/* Contenido */}
             <View className="flex-1 p-3 justify-between">
               <View>
-                {/* Badges */}
                 <View className="flex-row items-center gap-1.5 mb-1 flex-wrap">
                   <View className={`px-2 py-0.5 rounded-full ${item.tipo === 'Pack Sorpresa' ? 'bg-green-100' : 'bg-blue-50'}`}>
                     <Text className={`text-[9px] font-bold ${item.tipo === 'Pack Sorpresa' ? 'text-green-700' : 'text-blue-600'}`}>
@@ -179,10 +176,8 @@ export function dishesTab() {
                   )}
                 </View>
 
-                {/* Nombre */}
                 <Text className="font-black text-sm text-gray-800 mb-1" numberOfLines={1}>{item.nombre}</Text>
 
-                {/* Horario */}
                 <View className="flex-row items-center gap-1">
                   <Clock color="#f97316" size={11} />
                   <Text className="text-[10px] text-orange-500 font-bold">
@@ -191,7 +186,6 @@ export function dishesTab() {
                 </View>
               </View>
 
-              {/* Precios y acciones */}
               <View className="flex-row items-end justify-between mt-2">
                 <View>
                   {item.precioOriginal > 0 && (
@@ -221,7 +215,6 @@ export function dishesTab() {
   return (
     <View className="flex-1 bg-gray-50">
 
-      {/* TABS */}
       <View className="px-4 pt-5 pb-3">
         <View className="flex-row bg-gray-100 p-1 rounded-2xl">
           <TouchableOpacity
@@ -250,7 +243,6 @@ export function dishesTab() {
         }
       </ScrollView>
 
-      {/* BOTÓN PUBLICAR */}
       <View className="absolute bottom-6 w-full px-4 z-20">
         <TouchableOpacity
           onPress={() => router.push('/business/addProduct')}
@@ -262,7 +254,6 @@ export function dishesTab() {
         </TouchableOpacity>
       </View>
 
-      {/* MODAL EDICIÓN */}
       <Modal visible={editModalVisible} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white rounded-t-3xl p-6 pb-10">

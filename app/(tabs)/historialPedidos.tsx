@@ -1,9 +1,9 @@
+import { auth, db } from '@/services/firebase';
 import { useRouter } from 'expo-router';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { ArrowLeft, Clock, Package, ShoppingBag } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { auth, db } from '@/services/firebase';
 
 export default function HistorialPedidosScreen() {
   const router = useRouter();
@@ -26,7 +26,12 @@ export default function HistorialPedidosScreen() {
         );
         const snap = await getDocs(q);
 
-        const pedidosConNombre = await Promise.all(
+        const pedidosConNombre: Array<{
+          id: string;
+          restaurantName: string;
+          fechaPedido?: string;
+          [key: string]: any;
+        }> = await Promise.all(
           snap.docs.map(async (pedidoDoc) => {
             const data = pedidoDoc.data();
             let restName = 'Restaurante';
@@ -38,10 +43,11 @@ export default function HistorialPedidosScreen() {
           })
         );
 
-        // Ordenar por fecha más reciente
-        pedidosConNombre.sort((a, b) =>
-          new Date(b.fechaPedido).getTime() - new Date(a.fechaPedido).getTime()
-        );
+        pedidosConNombre.sort((a, b) => {
+          const ta = a.fechaPedido ? new Date(a.fechaPedido).getTime() : 0;
+          const tb = b.fechaPedido ? new Date(b.fechaPedido).getTime() : 0;
+          return tb - ta;
+        });
 
         setPedidos(pedidosConNombre);
       } catch (error) {
@@ -62,7 +68,6 @@ export default function HistorialPedidosScreen() {
   return (
     <View className="flex-1 bg-gray-50">
 
-      {/* HEADER */}
       <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full bg-white/20 mr-3">
           <ArrowLeft color="white" size={22} />
@@ -103,7 +108,6 @@ export default function HistorialPedidosScreen() {
             return (
               <View key={pedido.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
                 
-                {/* Top */}
                 <View className="p-4 border-b border-gray-50">
                   <View className="flex-row items-center justify-between mb-1">
                     <Text className="font-black text-gray-800 text-base" numberOfLines={1}>{pedido.restaurantName}</Text>
@@ -116,7 +120,6 @@ export default function HistorialPedidosScreen() {
                   <Text className="text-xs text-gray-400">{formatDate(pedido.fechaPedido)}</Text>
                 </View>
 
-                {/* Info */}
                 <View className="px-4 py-3 flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
                     <View className="flex-row items-center gap-1">
@@ -131,7 +134,6 @@ export default function HistorialPedidosScreen() {
                   <Text className="font-black text-[#90C659]">S/ {pedido.totalPagado?.toFixed(2)}</Text>
                 </View>
 
-                {/* Items */}
                 <View className="px-4 pb-4">
                   {pedido.items?.slice(0, 2).map((item: any, index: number) => (
                     <Text key={index} className="text-xs text-gray-400 mb-0.5">• {item.quantity}x {item.name}</Text>
@@ -141,7 +143,6 @@ export default function HistorialPedidosScreen() {
                   )}
                 </View>
 
-                {/* Código */}
                 <View className="bg-gray-50 px-4 py-2.5 flex-row items-center justify-between">
                   <Text className="text-xs text-gray-400">Código:</Text>
                   <Text className="text-xs font-black text-gray-700 tracking-widest">

@@ -28,12 +28,10 @@ export default function CheckoutScreen() {
     { text: "¡Pago aprobado!", icon: <CheckCircle2 color="white" size={32} /> }
   ];
 
-  const isEcoEligible = true; // Ya no existe delivery; ambas modalidades restantes son elegibles
+  const isEcoEligible = true; 
   const ecoDiscount = (ownContainer && isEcoEligible) ? 0.50 : 0;
   const finalTotal = initialTotal - ecoDiscount;
 
-  // Genera 3 franjas horarias de 1 hora, empezando desde el próximo múltiplo de 30 min
-  // Genera 3 franjas horarias de 30 min, empezando desde el próximo múltiplo de 15 min
   const timeSlots = React.useMemo(() => {
     const now = new Date();
     const start = new Date(now);
@@ -127,7 +125,6 @@ export default function CheckoutScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
       
-      {/* HEADER */}
       <View className="bg-[#90C659] pt-12 pb-4 px-4 flex-row items-center gap-3 shadow-md z-10">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full">
           <ArrowLeft color="white" size={24} />
@@ -137,7 +134,6 @@ export default function CheckoutScreen() {
 
       <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         
-        {/* SECCIÓN 1: MODALIDAD */}
         <View className="mb-6">
           <View className="flex-row items-center gap-2 mb-3">
             <Text className="text-lg">📦</Text>
@@ -167,7 +163,6 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        {/* SECCIÓN: HORARIO Y ENVASE PROPIO */}
         <View className="mb-6">
           <ModalitySelector 
             modality={selectedModality as 'tienda' | 'comer_alli'} 
@@ -195,7 +190,6 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* SECCIÓN 2: MÉTODO DE PAGO */}
         <View className="mb-6">
           <Text className="font-bold mb-3 text-gray-800">💳 Método de Pago</Text>
           <View className="flex-row gap-3">
@@ -239,7 +233,6 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        {/* SECCIÓN 3: RESUMEN DEL PEDIDO */}
         <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
           <Text className="font-bold mb-4 text-gray-800">🛒 Resumen de Pedido</Text>
           
@@ -281,7 +274,6 @@ export default function CheckoutScreen() {
 
       </ScrollView>
 
-      {/* FOOTER: BOTÓN DE CONFIRMAR */}
       <View className="absolute bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 pb-8">
         <TouchableOpacity
           onPress={handlePayment}

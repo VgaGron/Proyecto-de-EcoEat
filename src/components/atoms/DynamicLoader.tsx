@@ -48,7 +48,6 @@ export const DynamicLoader = ({ steps, onComplete }: DynamicLoaderProps) => {
   return (
     <View className="flex-1 bg-green-50 flex-col items-center justify-center p-6 relative overflow-hidden">
       
-      {/* Fondo decorativo */}
       <View className="absolute -top-10 -right-10 opacity-5 pointer-events-none">
         <Image 
           source={{ uri: "https://cdn-icons-png.flaticon.com/512/2913/2913520.png" }} 
@@ -66,13 +65,11 @@ export const DynamicLoader = ({ steps, onComplete }: DynamicLoaderProps) => {
 
       <View className="z-10 flex-col items-center w-full max-w-xs">
         
-        {/* Círculo estático (Las animaciones complejas de ping/pulse de Tailwind a veces no rinden bien en móvil, así que usamos un diseño limpio y sólido) */}
         <View className="relative w-24 h-24 mb-8 items-center justify-center">
           <View className="absolute inset-0 bg-[#90C659] rounded-full opacity-20" />
           <View className="absolute inset-2 bg-[#90C659] rounded-full opacity-40" />
           
           <View className="relative z-10 w-16 h-16 bg-[#90C659] rounded-full shadow-lg flex items-center justify-center">
-            {/* Aquí inyectamos el ícono dinámico */}
             {steps[loadingStep]?.icon}
           </View>
         </View>
@@ -81,7 +78,6 @@ export const DynamicLoader = ({ steps, onComplete }: DynamicLoaderProps) => {
           {steps[loadingStep]?.text}
         </Text>
         
-        {/* Barra de progreso nativa */}
         <View className="w-48 h-1.5 bg-gray-200 rounded-full mt-4 overflow-hidden">
           <Animated.View 
             className="h-full bg-[#90C659] rounded-full"

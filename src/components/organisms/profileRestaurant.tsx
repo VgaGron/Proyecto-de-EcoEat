@@ -85,10 +85,8 @@ export function ProfileRestaurant() {
   return (
     <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-      {/* HEADER */}
       <View style={{ backgroundColor: '#90C659', paddingTop: 60, paddingBottom: 40, paddingHorizontal: 24, alignItems: 'center' }}>
 
-        {/* FOTO */}
         <View style={{
           width: 114, height: 114, borderRadius: 57,
           overflow: 'hidden', backgroundColor: 'white',
@@ -126,7 +124,6 @@ export function ProfileRestaurant() {
 
       <View className="px-4 -mt-5">
 
-        {/* ESTADÍSTICAS */}
         <View className="flex-row gap-3 mb-5">
           <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm items-center">
             <View className="w-10 h-10 bg-green-50 rounded-xl items-center justify-center mb-2">
@@ -151,7 +148,6 @@ export function ProfileRestaurant() {
           </View>
         </View>
 
-        {/* ESTADO DE CUENTA */}
         <Text className="font-bold text-sm text-gray-800 mb-3">Estado de la Cuenta</Text>
         <View className={`rounded-2xl p-4 flex-row items-center gap-3 mb-5 border ${isVerified ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
           {isVerified ? <ShieldCheck color="#16a34a" size={24} /> : <FileCheck2 color="#ea580c" size={24} />}
@@ -165,7 +161,6 @@ export function ProfileRestaurant() {
           </View>
         </View>
 
-        {/* DIRECCIÓN */}
         {data?.ubicacion?.direccion_texto && (
           <>
             <Text className="font-bold text-sm text-gray-800 mb-3">Dirección del Local</Text>
@@ -178,7 +173,6 @@ export function ProfileRestaurant() {
           </>
         )}
 
-        {/* DATOS FINANCIEROS */}
         <Text className="font-bold text-sm text-gray-800 mb-3">Datos Financieros</Text>
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
           <View className="p-4 flex-row items-center justify-between">
@@ -197,7 +191,6 @@ export function ProfileRestaurant() {
           </View>
         </View>
 
-        {/* CONFIGURACIÓN */}
         <Text className="font-bold text-sm text-gray-800 mb-3">Configuración</Text>
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
           <TouchableOpacity
@@ -230,7 +223,6 @@ export function ProfileRestaurant() {
           </TouchableOpacity>
         </View>
 
-        {/* CERRAR SESIÓN */}
         <TouchableOpacity
           onPress={handleLogout}
           className="flex-row items-center justify-center gap-2 bg-red-50 py-4 rounded-2xl border border-red-100 mb-6"

@@ -204,7 +204,6 @@ export default function DashboardRestaurantScreen() {
   return (
     <View className="flex-1 bg-gray-50 flex-col relative">
       
-      {/* PESTAÑA 1: INICIO (DASHBOARD) */}
       {activeTab === 'home' && (
         <View className="flex-1">
           <View className="bg-[#90C659] px-6 pt-16 pb-8 rounded-b-[40px] shadow-lg shadow-[#90C659]/30 shrink-0 relative z-10">
@@ -328,7 +327,6 @@ export default function DashboardRestaurantScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* MODAL DEL ESCÁNER DE CÁMARA (Se queda aquí porque es global para los pedidos) */}
       <Modal visible={isQRScannerOpen} transparent animationType="slide">
          <View className="flex-1 bg-black">
            <View className="p-6 flex-row justify-between items-center pt-16 relative z-50">

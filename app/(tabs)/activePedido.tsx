@@ -52,7 +52,6 @@ export default function ActivePedidoScreen() {
   return (
     <View className="flex-1 bg-gray-50">
 
-      {/* HEADER */}
       <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full bg-white/20 mr-3">
           <ArrowLeft color="white" size={22} />
@@ -84,7 +83,6 @@ export default function ActivePedidoScreen() {
       ) : (
         <ScrollView className="flex-1 px-4 pt-5" contentContainerStyle={{ paddingBottom: 40 }}>
 
-          {/* Estado */}
           <View className="bg-green-50 rounded-2xl p-4 border border-green-200 flex-row items-center gap-3 mb-5">
             <CheckCircle color="#16a34a" size={28} />
             <View>
@@ -93,7 +91,6 @@ export default function ActivePedidoScreen() {
             </View>
           </View>
 
-          {/* Info restaurante */}
           <View className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4">
             <Text className="font-black text-gray-800 text-base mb-3">🏪 {pedido.restaurantName}</Text>
 
@@ -119,7 +116,6 @@ export default function ActivePedidoScreen() {
             </View>
           </View>
 
-          {/* Items */}
           <Text className="font-black text-sm text-gray-800 mb-3">🛒 Productos</Text>
           <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4">
             {pedido.items?.map((item: any, index: number) => (
@@ -134,7 +130,6 @@ export default function ActivePedidoScreen() {
             </View>
           </View>
 
-          {/* Código QR */}
 <Text className="font-black text-sm text-gray-800 mb-3">🎫 Código de recojo</Text>
 <View className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm items-center">
   <View className="border-4 border-[#90C659] rounded-2xl p-4 mb-3">

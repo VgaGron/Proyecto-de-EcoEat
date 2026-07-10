@@ -1,59 +1,59 @@
 {
   "ASYNC-001": {
-    "occurrences": 3223,
+    "occurrences": 3705,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T14:52:17.383Z",
-    "last_seen": "2026-07-09T22:17:34.619Z"
+    "last_seen": "2026-07-10T18:00:02.537Z"
   },
   "CC-004": {
-    "occurrences": 2583,
+    "occurrences": 3065,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T14:52:17.385Z",
-    "last_seen": "2026-07-09T22:17:34.691Z"
+    "last_seen": "2026-07-10T18:00:02.540Z"
   },
   "JS-002": {
-    "occurrences": 1331,
+    "occurrences": 1449,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.329Z",
-    "last_seen": "2026-07-09T22:17:34.616Z"
+    "last_seen": "2026-07-10T18:00:02.535Z"
   },
   "CC-003": {
-    "occurrences": 113,
+    "occurrences": 115,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.331Z",
-    "last_seen": "2026-07-09T22:17:34.655Z"
+    "last_seen": "2026-07-10T17:05:45.866Z"
   },
   "REACT-003": {
-    "occurrences": 1128,
+    "occurrences": 1195,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.332Z",
-    "last_seen": "2026-07-09T22:17:34.656Z"
+    "last_seen": "2026-07-10T18:00:02.536Z"
   },
   "JS-001": {
-    "occurrences": 1229,
+    "occurrences": 1445,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:17:40.334Z",
-    "last_seen": "2026-07-09T22:17:34.692Z"
+    "last_seen": "2026-07-10T18:00:02.540Z"
   },
   "PERF-001": {
-    "occurrences": 10,
+    "occurrences": 25,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-30T15:48:21.297Z",
-    "last_seen": "2026-07-07T18:20:08.724Z"
+    "last_seen": "2026-07-10T17:38:28.094Z"
   },
   "CC-001": {
-    "occurrences": 412,
+    "occurrences": 455,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-07-01T18:22:22.872Z",
-    "last_seen": "2026-07-09T22:12:56.315Z"
+    "last_seen": "2026-07-10T17:37:14.197Z"
   },
   "SEC-002": {
     "occurrences": 4,

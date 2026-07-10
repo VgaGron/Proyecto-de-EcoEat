@@ -162,7 +162,6 @@ export default function EditProfileRestaurantScreen() {
   return (
     <View className="flex-1 bg-gray-50">
 
-      {/* HEADER */}
       <View className="bg-[#90C659] pt-12 pb-5 px-4 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="p-1.5 rounded-full bg-white/20 mr-3">
           <ArrowLeft color="white" size={22} />
@@ -182,7 +181,6 @@ export default function EditProfileRestaurantScreen() {
           </View>
         ) : null}
 
-        {/* LOGO */}
         <Text className="font-black text-sm text-gray-800 mb-3">📸 Logo del local</Text>
         <TouchableOpacity onPress={pickImage} className="items-center mb-6">
           <View className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#90C659] bg-gray-100 items-center justify-center">
@@ -200,7 +198,6 @@ export default function EditProfileRestaurantScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* NOMBRE COMERCIAL */}
         <Text className="font-black text-sm text-gray-800 mb-3">🏪 Nombre del local</Text>
         <View className="bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-5">
           <TextInput
@@ -212,7 +209,6 @@ export default function EditProfileRestaurantScreen() {
           />
         </View>
 
-        {/* CATEGORÍA */}
         <Text className="font-black text-sm text-gray-800 mb-3">🍽️ Categoría</Text>
         <View className="flex-row flex-wrap gap-2 mb-5">
           {CATEGORIES.map((cat) => (
@@ -226,7 +222,6 @@ export default function EditProfileRestaurantScreen() {
           ))}
         </View>
 
-        {/* DIRECCIÓN */}
         <Text className="font-black text-sm text-gray-800 mb-3">📍 Dirección del local</Text>
         <View className="bg-white rounded-2xl border border-gray-100 px-4 py-3 mb-3">
           <TextInput
@@ -240,7 +235,6 @@ export default function EditProfileRestaurantScreen() {
           />
         </View>
 
-        {/* MAPA */}
         <Text className="font-black text-sm text-gray-800 mb-2">🗺️ Ubicación en el mapa</Text>
         <Text className="text-xs text-gray-400 mb-3">Toca el mapa o arrastra el marcador para ajustar tu ubicación</Text>
 
@@ -286,7 +280,6 @@ export default function EditProfileRestaurantScreen() {
 
       </ScrollView>
 
-      {/* BOTÓN GUARDAR */}
       <View className="absolute bottom-0 w-full px-4 pt-3 pb-8 bg-white border-t border-gray-100">
         <TouchableOpacity
           onPress={handleSave}

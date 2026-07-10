@@ -168,7 +168,6 @@ export default function AddProductScreen() {
           </View>
         ) : null}
 
-        {/* Selector de tipo de producto */}
         <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Tipo de producto</Text>
         <View className="flex-row gap-3 mb-5">
           <TouchableOpacity
@@ -196,7 +195,6 @@ export default function AddProductScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Imagen del producto */}
         <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Foto del producto</Text>
         <TouchableOpacity
           onPress={pickImage}
@@ -212,7 +210,6 @@ export default function AddProductScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Datos básicos */}
         <View className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
           <Text className="font-bold text-xs text-gray-700 mb-1">Nombre del producto</Text>
           <TextInput
@@ -234,7 +231,6 @@ export default function AddProductScreen() {
           />
         </View>
 
-        {/* Precios y stock */}
         <View className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
@@ -259,7 +255,6 @@ export default function AddProductScreen() {
             </View>
           </View>
 
-          {/* LA NUEVA FILA DE STOCK Y HORARIOS EXACTOS */}
           <View className="flex-row gap-3">
             <View className="w-1/3">
               <Text className="font-bold text-xs text-gray-700 mb-1">Stock</Text>
@@ -294,7 +289,6 @@ export default function AddProductScreen() {
           </View>
         </View>
 
-        {/* Categoría */}
         <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">Categoría</Text>
         <View className="flex-row flex-wrap gap-2 mb-5">
           {CATEGORIES.map((cat) => (
@@ -312,7 +306,6 @@ export default function AddProductScreen() {
           ))}
         </View>
 
-        {/* Alérgenos */}
         <Text className="font-bold text-xs text-gray-700 mb-2 uppercase tracking-wide">
           Alérgenos (opcional)
         </Text>
@@ -335,7 +328,6 @@ export default function AddProductScreen() {
 
       </ScrollView>
 
-      {/* Botón fijo inferior */}
       <View className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-white shadow-lg pb-8">
         <TouchableOpacity
           onPress={handleSave}
