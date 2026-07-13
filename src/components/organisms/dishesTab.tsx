@@ -1,9 +1,10 @@
 import { auth, db } from '@/services/firebase';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { AlertTriangle, Clock, Edit2, Package, Plus, RefreshCw, X } from 'lucide-react-native';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { AlertTriangle, Clock, Edit2, Package, Plus, RefreshCw } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import EditProduct from './EditProduct';
 
 const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   if (!fechaCreacion || !horaStr || !horaStr.includes(':')) return null;
@@ -14,7 +15,7 @@ const getAbsoluteDate = (fechaCreacion: string, horaStr: string) => {
   return date;
 };
 
-export function dishesTab() {
+export function DishesTab() {
   const router = useRouter();
 
   const [activos, setActivos] = useState<any[]>([]);
@@ -24,12 +25,6 @@ export function dishesTab() {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [editPrecioOriginal, setEditPrecioOriginal] = useState('');
-  const [editPrecioOferta, setEditPrecioOferta] = useState('');
-  const [editStock, setEditStock] = useState('');
-  const [editHoraInicio, setEditHoraInicio] = useState('');
-  const [editHoraFin, setEditHoraFin] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
   const fetchProducts = async () => {
     if (!auth.currentUser) return;
@@ -78,43 +73,7 @@ export function dishesTab() {
 
   const openEditModal = (item: any) => {
     setEditingItem(item);
-    setEditPrecioOriginal(String(item.precioOriginal || ''));
-    setEditPrecioOferta(String(item.precioOferta || ''));
-    setEditStock(String(item.cantidadDisponible || '0'));
-    setEditHoraInicio(item.horaInicio || '');
-    setEditHoraFin(item.horaFin || '');
     setEditModalVisible(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingItem) return;
-    if (Number(editPrecioOferta) >= Number(editPrecioOriginal)) {
-      Alert.alert('Error', 'El precio de oferta debe ser menor al original.'); return;
-    }
-    if (!editHoraInicio.trim() || !editHoraFin.trim()) {
-      Alert.alert('Error', 'Debes colocar hora de inicio y fin.'); return;
-    }
-
-    try {
-      setIsSaving(true);
-      const itemRef = doc(db, editingItem.collectionName, editingItem.id);
-      await updateDoc(itemRef, {
-        precioOriginal: Number(editPrecioOriginal),
-        precioOferta: Number(editPrecioOferta),
-        cantidadDisponible: Number(editStock),
-        horaInicio: editHoraInicio,
-        horaFin: editHoraFin,
-        fecha_creacion: new Date().toISOString()
-      });
-
-      setEditModalVisible(false);
-      await fetchProducts();
-      Alert.alert('¡Listo!', 'Producto reactivado/actualizado correctamente.');
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el producto.');
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const descuento = (precioOriginal: number, precioOferta: number) =>
@@ -222,7 +181,7 @@ export function dishesTab() {
             className={`flex-1 py-2.5 items-center rounded-xl ${viewMode === 'activos' ? 'bg-white shadow-sm' : ''}`}
           >
             <Text className={`text-xs font-black ${viewMode === 'activos' ? 'text-[#90C659]' : 'text-gray-400'}`}>
-              ✅ Activos ({activos.length})
+              Activos ({activos.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -230,7 +189,7 @@ export function dishesTab() {
             className={`flex-1 py-2.5 items-center rounded-xl ${viewMode === 'historial' ? 'bg-white shadow-sm' : ''}`}
           >
             <Text className={`text-xs font-black ${viewMode === 'historial' ? 'text-gray-700' : 'text-gray-400'}`}>
-              🕐 Historial ({historial.length})
+              Historial ({historial.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -254,74 +213,16 @@ export function dishesTab() {
         </TouchableOpacity>
       </View>
 
-      <Modal visible={editModalVisible} transparent animationType="slide">
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 pb-10">
-
-            <View className="flex-row items-center justify-between mb-5">
-              <View>
-                <Text className="font-black text-lg text-gray-800">
-                  {viewMode === 'historial' ? '♻️ Reactivar Producto' : '✏️ Editar Producto'}
-                </Text>
-                <Text className="text-xs text-gray-400 mt-0.5">{editingItem?.nombre}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)} className="p-2 bg-gray-100 rounded-full">
-                <X color="#6b7280" size={18} />
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-row gap-3 mb-3">
-              <View className="flex-1 bg-gray-50 rounded-xl p-3">
-                <Text className="font-bold text-xs text-gray-400 mb-1">Precio original</Text>
-                <View className="flex-row items-center gap-1">
-                  <Text className="text-gray-400 text-sm">S/.</Text>
-                  <TextInput value={editPrecioOriginal} onChangeText={t => setEditPrecioOriginal(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="flex-1 text-base font-black text-gray-700" />
-                </View>
-              </View>
-              <View className="flex-1 bg-green-50 rounded-xl p-3 border border-green-100">
-                <Text className="font-bold text-xs text-green-500 mb-1">Precio oferta</Text>
-                <View className="flex-row items-center gap-1">
-                  <Text className="text-green-400 text-sm">S/.</Text>
-                  <TextInput value={editPrecioOferta} onChangeText={t => setEditPrecioOferta(t.replace(/[^0-9.]/g, ''))} keyboardType="decimal-pad" className="flex-1 text-base font-black text-green-700" />
-                </View>
-              </View>
-            </View>
-
-            <View className="flex-row gap-3 mb-5">
-              <View className="flex-1 bg-gray-50 rounded-xl p-3">
-                <Text className="font-bold text-xs text-gray-400 mb-1">Stock</Text>
-                <TextInput value={editStock} onChangeText={t => setEditStock(t.replace(/[^0-9]/g, ''))} keyboardType="numeric" className="text-base font-black text-gray-700" />
-              </View>
-              <View className="flex-1 bg-gray-50 rounded-xl p-3">
-                <Text className="font-bold text-xs text-gray-400 mb-1">🕐 Inicia</Text>
-                <TextInput value={editHoraInicio} onChangeText={setEditHoraInicio} maxLength={5} placeholder="14:00" className="text-base font-black text-gray-700" />
-              </View>
-              <View className="flex-1 bg-gray-50 rounded-xl p-3">
-                <Text className="font-bold text-xs text-gray-400 mb-1">🕐 Termina</Text>
-                <TextInput value={editHoraFin} onChangeText={setEditHoraFin} maxLength={5} placeholder="18:00" className="text-base font-black text-gray-700" />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={handleSaveEdit}
-              disabled={isSaving}
-              className={`w-full py-4 rounded-2xl items-center flex-row justify-center gap-2 ${isSaving ? 'bg-gray-300' : 'bg-[#90C659]'}`}
-            >
-              {isSaving
-                ? <ActivityIndicator color="white" />
-                : <>
-                    {viewMode === 'historial' && <RefreshCw color="white" size={18} />}
-                    <Text className="text-white font-black text-base">
-                      {viewMode === 'historial' ? 'Reactivar y Publicar' : 'Guardar cambios'}
-                    </Text>
-                  </>
-              }
-            </TouchableOpacity>
-
-          </View>
-        </View>
-      </Modal>
-
+      <EditProduct
+        visible={editModalVisible}
+        item={editingItem}
+        viewMode={viewMode}
+        onClose={() => setEditModalVisible(false)}
+        onSuccess={() => {
+          setEditModalVisible(false);
+          fetchProducts(); 
+        }}
+      />
     </View>
   );
 }
